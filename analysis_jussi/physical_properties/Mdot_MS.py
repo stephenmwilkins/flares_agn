@@ -49,8 +49,19 @@ for i, tag in enumerate(fl.tags):
     for ii in range(len(halo)):
         ws = np.append(ws, np.ones(np.shape(X[halo[ii]][tag]))*weights[ii])
         x = np.append(x, np.log10(X[halo[ii]][tag]))
-        y = np.append(y, np.log10(Y[halo[ii]][tag]))
+        y = np.append(y, Y[halo[ii]][tag])
 
+    import astropy.constants as constants
+    import astropy.units as units
+
+    h = 0.6777  # Hubble parameter
+
+
+    # converting MBHacc units to M_sol/yr
+    y *= h * 6.445909132449984E23  # g/s
+    y = y/constants.M_sun.to('g').value  # convert to M_sol/s
+    y *= units.yr.to('s')  # convert to M_sol/yr
+    y = np.log10(y)
 
 
     x += 10 # units are 1E10 M_sol
@@ -64,7 +75,7 @@ for i, tag in enumerate(fl.tags):
 
     # -- this will calculate the weighted quantiles of the distribution
     quantiles = [0.84,0.50,0.16] # quantiles for range
-    bins = np.arange(8, 11.5, 0.2) # x-coordinate bins, in this case stellar mass
+    bins = np.arange(5.5, 11.5, 0.1) # x-coordinate bins, in this case stellar mass
     bincen = (bins[:-1]+bins[1:])/2.
     out = flares.binned_weighted_quantile(x,y,ws,bins,quantiles)
 

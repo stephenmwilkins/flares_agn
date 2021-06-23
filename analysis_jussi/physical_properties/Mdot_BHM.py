@@ -50,9 +50,20 @@ for i, tag in enumerate(fl.tags):
         s = (np.log10(X[halo[ii]][tag])+10>bhm_cut)
         ws = np.append(ws, np.ones(np.shape(X[halo[ii]][tag][s]))*weights[ii])
         x = np.append(x, np.log10(X[halo[ii]][tag][s]))
-        y = np.append(y, np.log10(Y[halo[ii]][tag][s]))
+        y = np.append(y, Y[halo[ii]][tag][s])
 
 
+    import astropy.constants as constants
+    import astropy.units as units
+
+    h = 0.6777  # Hubble parameter
+
+
+    # converting MBHacc units to M_sol/yr
+    y *= h * 6.445909132449984E23  # g/s
+    y = y/constants.M_sun.to('g').value  # convert to M_sol/s
+    y *= units.yr.to('s')  # convert to M_sol/yr
+    y = np.log10(y)
 
     x += 10 # units are 1E10 M_sol
 
