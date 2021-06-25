@@ -69,7 +69,7 @@ for i, tag in enumerate(np.flip(fl.tags)):
     print(z)
     print(np.min(x),np.median(x),np.max(x))
     print(np.min(y),np.median(y),np.max(y))
-
+    ''''''
     binw = 0.25
     bins = np.arange(5, 10, binw)
     b_c = bins[:-1] + binw / 2
