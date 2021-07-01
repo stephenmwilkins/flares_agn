@@ -60,11 +60,17 @@ for i, tag in enumerate(np.flip(fl.tags)):
         y = np.append(y, Y[halo[ii]][tag][s])
 
     w = np.nonzero(y) # this line selects hosts
+    w_nonhost = np.invert(w)
 
     # --- simply print the ranges of the quantities
 
+    x_nonhost = np.log10(x[w_nonhost]) +10
+    ws_nonhost = ws[w_nonhost]
+
     x = np.log10(x[w]) +10
     ws = ws[w]
+
+
 
     print(z)
     print(np.min(x),np.median(x),np.max(x))
@@ -76,12 +82,16 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
     N_weighted, edges = np.histogram(x, bins=bins, weights=ws)
 
+    N_weighted_nonhost, edges = np.histogram(x_nonhost, bins=bins, weights=ws_nonhost)
+
     h = 0.6777
     vol = (4 / 3) * np.pi * (14 / h) ** 3
 
     phi = N_weighted / (binw * vol)
+    phi_nonhost = N_weighted_nonhost / (binw * vol)
 
-    axes.flatten()[i].plot(bins[:-1] + binw / 2, np.log10(phi), c=cmap(norm(z)), label=rf'$\rm z={int(z)}$')
+    axes.flatten()[i].plot(bins[:-1] + binw / 2, np.log10(phi), c=cmap(norm(z)))
+    axes.flatten()[i].plot(bins[:-1] + binw / 2, np.log10(phi_nonhost), '--', c=cmap(norm(z)))
 
     '''
     # -- this will calculate the weighted quantiles of the distribution
@@ -104,7 +114,14 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
     axes.flatten()[i].text(0.7, 0.9, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
                            color=cmap(norm(z)))
+    axes.flatten()[i].set_ylim(-7, -1)
+    axes.flatten()[i].set_xlim(7, 10)
 
+
+
+axes.flatten()[0].plot(-99, -99, '-', c='k', alpha=0.6, label="AGN hosts")
+axes.flatten()[0].plot(-99, -99, '--', c='k', alpha=0.6, label="non-hosts")
+axes.flatten()[0].legend(loc='best')
 # --- scatter plot
 
 #ax.scatter(x,y,s=3,c='k',alpha=0.1)
@@ -113,6 +130,6 @@ for i, tag in enumerate(np.flip(fl.tags)):
 fig.text(0.01, 0.55, r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\, dex^{-1}]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
 fig.text(0.45,0.05, r'$\rm log_{10}[M_{*}\;/\;M_{\odot}]$', ha = 'center', va = 'bottom', fontsize=10)
 
-fig.savefig(f'figures/MS_DF/MS_DF_zeds_quantiles_hosts.pdf', bbox_inches='tight')
+fig.savefig(f'figures/comparisons/MS_DF_zeds.pdf', bbox_inches='tight')
 fig.clf()
 
