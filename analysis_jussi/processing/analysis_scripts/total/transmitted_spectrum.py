@@ -47,7 +47,7 @@ bar.set_ticks([4, 5, 6])
 cax.set_ylabel(r'$\rm log_{10}[T_{AGN} \; /\; K]$')
 
 
-ax.set_ylim(37, 45)
+ax.set_ylim(25, 43)
 ax.set_xlim(-4, 6.2)
 
 ax.set_ylabel(r"$\rm log_{10}[\lambda F_{\lambda} \; / \; erg \;s^{-1}]$")

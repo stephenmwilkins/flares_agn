@@ -14,6 +14,13 @@ import astropy.units as units
 import FLARE.photom as photom
 import FLARE.plt as fplt
 
+uvlims = [1e3, 1e4]
+
+spectrum_index = 0
+
+spectrum_parts = {'uv':[1400, 1600], 'optical':[4000, 8000]}
+spectrum_part = list(spectrum_parts.keys())[spectrum_index]
+lims = spectrum_parts[spectrum_part]
 
 cmap = mpl.cm.viridis
 norm = mpl.colors.Normalize(vmin = np.log10(1e4), vmax = np.log10(1.5e6))
@@ -47,10 +54,14 @@ bar.set_ticks([4, 5, 6])
 cax.set_ylabel(r'$\rm log_{10}[T_{AGN} \; /\; K]$')
 
 
-ax.set_ylim(35, 45)
-ax.set_xlim(-2, 7)
+ax.set_ylim(28, 43)
+ax.set_xlim(2,4)
+
+ax.axvline(np.log10(lims[0]), c='k')
+ax.axvline(np.log10(lims[1]), c='k')
+
 
 ax.set_ylabel(r"$\rm log_{10}[\lambda F_{\lambda} \; / \; erg \;s^{-1}]$")
 ax.set_xlabel(r"$\rm log_{10}[\lambda \; / \; \AA]$")
 
-fig.savefig(f'figures/spectra/total.pdf', bbox_inches='tight')
+fig.savefig(f'figures/spectra/total_{spectrum_part}_test.pdf', bbox_inches='tight')

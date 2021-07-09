@@ -14,11 +14,13 @@ import astropy.units as units
 import FLARE.photom as photom
 import FLARE.plt as fplt
 
+from scipy.integrate import simps
 
 cmap = mpl.cm.viridis
 norm = mpl.colors.Normalize(vmin = np.log10(1e4), vmax = np.log10(1.5e6))
 
-output_dir = '../../cloudy/output/linear/total'
+output_dir_bol = '../../cloudy/output/linear'
+output_dir_uv = '../../cloudy/output/linear/total'
 
 AGN_T = np.linspace(10000, 1.5e6, 100)  # range of AGN temperatures to model
 
@@ -30,14 +32,23 @@ width = 0.75
 height = 0.75
 ax = fig.add_axes((left, bottom, width, height))
 
-
+y = np.array([])
 
 for i in range(len(AGN_T)):
-    lam, incident, transmitted, nebular, total, linecont = np.loadtxt(f'{output_dir}/{i+1}.cont', delimiter='\t',
+    lam_bol, incident_bol, transmitted_bol, nebular_bol, total_bol, linecont_bol = np.loadtxt(f'{output_dir_bol}/{i+1}.cont', delimiter='\t',
                                                                       usecols=(0, 1, 2, 3, 4, 8)).T
 
-    ax.plot(np.log10(lam), np.log10(nebular),c = cmap(norm(np.log10(AGN_T[i]))))
+    lam_uv, incident_uv, transmitted_uv, nebular_uv, total_uv, linecont_uv = np.loadtxt(
+        f'{output_dir_uv}/{i + 1}.cont', delimiter='\t',
+        usecols=(0, 1, 2, 3, 4, 8)).T
 
+    y = np.append(y, simps(total_uv/lam_uv, lam_uv)/simps(total_bol, lam_bol))
+
+print(y)
+
+ax.plot(np.log10(AGN_T), y)
+
+'''
 cmapper = cm.ScalarMappable(norm=norm, cmap=cmap)
 cmapper.set_array([])
 
@@ -45,12 +56,12 @@ cax = fig.add_axes([width+left, bottom, 0.05, height])
 bar = fig.colorbar(cmapper, cax=cax, orientation='vertical', format='%d')
 bar.set_ticks([4, 5, 6])
 cax.set_ylabel(r'$\rm log_{10}[T_{AGN} \; /\; K]$')
+'''
 
+#ax.set_ylim(25, 43)
+#ax.set_xlim(-4, 6.2)
 
-ax.set_ylim(25, 43)
-ax.set_xlim(-4, 6.2)
+ax.set_ylabel(r"$\rm F_{\lambda, uv} \; / \; F_{\lambda, bol}$")
+ax.set_xlabel(r"$\rm log_{10}[T_{AGN} \; /\; K]$")
 
-ax.set_ylabel(r"$\rm log_{10}[\lambda F_{\lambda} \; / \; erg \;s^{-1}]$")
-ax.set_xlabel(r"$\rm log_{10}[\lambda \; / \; \AA]$")
-
-fig.savefig(f'figures/spectra/nebular.pdf', bbox_inches='tight')
+fig.savefig(f'figures/spectra/transmitted.pdf', bbox_inches='tight')
