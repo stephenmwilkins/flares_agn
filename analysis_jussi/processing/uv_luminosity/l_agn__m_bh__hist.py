@@ -39,6 +39,8 @@ def l_agn(m_dot, etta=0.1):
     l = (etta*m_dot*c**2).to(u.erg/u.s)
     return np.log10(l.value) # output in log10(erg/s)
 
+def l_edd(m_bh):
+    return np.log10(1.26*10**38*m_bh)
 
 cmap = mpl.cm.plasma
 norm = mpl.colors.Normalize(vmin=5., vmax=10.)
@@ -78,7 +80,7 @@ for i, tag in enumerate(np.flip(fl.tags)):
     z = np.flip(fl.zeds)[i]
     ws, x, y, mstar, lstar = np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
     for ii in range(len(halo)):
-        s = (np.log10(MS[halo[ii]][tag])+10 > 7)
+        s = (np.log10(MS[halo[ii]][tag])+10 > 8)
         ws = np.append(ws, np.ones(np.shape(X[halo[ii]][tag][s]))*weights[ii])
         x = np.append(x, X[halo[ii]][tag][s])
         y = np.append(y, Y[halo[ii]][tag][s])
@@ -87,6 +89,7 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
     h = 0.6777  # Hubble parameter
 
+    print(f'N_obj = {len(x)}')
 
     # converting MBHacc units to M_sol/yr
     x *= h * 6.445909132449984E23  # g/s
@@ -95,64 +98,34 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
 
     y *= 10**10
+    yy = 10**np.linspace(5.5, 10, 100)
+    xx = l_edd(yy)
+    yy = np.log10(yy)
+    y = np.log10(y)
+    b = np.array([l_agn(q) for q in x])
 
+    x=b
 
-    b = t_bb(y, x)
+    cmap2d = plt.cm.Blues
 
-    s_t = np.array(b) > 10**4
-
-    ws = ws[s_t]
-
-    q = np.array([l_agn(g, etta=0.1) for g in x[s_t]])
-
-    x = np.array(mstar)[s_t]
-
-
-    y = (ratio_from_t(b[s_t]))*10**q
-
-    y = np.log10(y /  ((const.c/(1500*u.AA).to(u.m)).to(u.Hz)).value)
-
-    yy = np.log10(10**lstar[s_t] + 10**y)
-
-    # --- simply print the ranges of the quantities
-
-    print(f'z={z}')
-    print(f'm_star,min = {np.min(x)}, m_star,med = {np.median(x)}, m_star,max = {np.max(x)}')
-    print(f'L_agn,bol,min = {np.min(q)}, L_agn,bol,med = {np.median(q)}, L_agn,bol,max = {np.max(q)}')
-    print(f'L_agn,uv,min = {np.min(y)}, L_agn,uv,med = {np.median(y)}, L_agn,uv,max = {np.max(y)}')
-
-
-    binw = 0.5
-    bins = np.arange(28,32,binw)
-    b_c = bins[:-1]+binw/2
-
-    N_weighted_total, edges_total = np.histogram(yy, bins=bins, weights=ws)
-
-    N_weighted_gal, edges_gal = np.histogram(lstar[s_t], bins = bins, weights = ws)
-
-    N_weighted, edges = np.histogram(y, bins = bins, weights = ws)
-
-    h = 0.6777
-    vol = (4/3)*np.pi*(14/h)**3
-
-    phi_total = N_weighted_total/(binw*vol)
-    phi_gal = N_weighted_gal/(binw*vol)
-    phi = N_weighted/(binw*vol)
-
-    ax.plot(bins[:-1] + binw / 2, np.log10(phi_gal), ls='dotted', c=cmap(norm(z)), label=rf'Stellar')
-    ax.plot(bins[:-1] + binw / 2, np.log10(phi), ls='dashed', c=cmap(norm(z)), label = rf'AGN')
-    ax.plot(bins[:-1] + binw / 2, np.log10(phi_total), ls='-', c=cmap(norm(z)), label=rf'Total')
+    cmapper = ax.hexbin(x, y, cmap=cmap2d, gridsize=(32,12), extent=[39, 47, 5.5, 9.5], edgecolor='none', linewidths=0.2) # weights=ws,
+    ax.plot(xx, yy, c='k', linewidth=1, ls='--', alpha=0.8)
 
     ax.text(0.7, 0.9, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=ax.transAxes,
                            color=cmap(norm(z)))
 
-    ax.set_ylim(-8, -2)
+    cax = fig.add_axes([width + left, bottom, 0.05, height])
+    bar = fig.colorbar(cmapper, cax=cax, orientation='vertical')
+    cax.set_ylabel(r'$\rm N$')
 
-    ax.set_xlabel(r'$\rm log_{10}[L_{FUV}\;/\;erg\,s^{-1}\,Hz^{-1}]$')
-    ax.set_ylabel(r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\, dex^{-1}]$')
+    ax.set_ylim(5.5, 9)
+    ax.set_xlim(42.7, 47)
 
-    ax.legend(loc='lower left', prop={'size': 6})
+    ax.set_xlabel(r'$\rm log_{10}[L_{AGN, bol}\;/\;erg\,s^{-1}]$')
+    ax.set_ylabel(r'$\rm log_{10}[M_{BH}\;/\;M_{\odot}]$')
 
-    fig.savefig(f'figures/individual_lfs/uvlf_{int(z)}.pdf', bbox_inches='tight')
+    #ax.legend(loc='lower left', prop={'size': 6})
+
+    fig.savefig(f'figures/mbh_lagn/individual/mbh_lagn_2d_{int(z)}.pdf', bbox_inches='tight')
     fig.clf()
 

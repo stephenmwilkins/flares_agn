@@ -97,62 +97,45 @@ for i, tag in enumerate(np.flip(fl.tags)):
     y *= 10**10
 
 
-    b = t_bb(y, x)
+    T_AGN = t_bb(y, x)
 
-    s_t = np.array(b) > 10**4
+    s_t = np.array(T_AGN) > 10**4
 
     ws = ws[s_t]
 
-    q = np.array([l_agn(g, etta=0.1) for g in x[s_t]])
-
     x = np.array(mstar)[s_t]
 
-
-    y = (ratio_from_t(b[s_t]))*10**q
-
-    y = np.log10(y /  ((const.c/(1500*u.AA).to(u.m)).to(u.Hz)).value)
-
-    yy = np.log10(10**lstar[s_t] + 10**y)
-
+    y = (ratio_from_t(T_AGN[s_t]))
     # --- simply print the ranges of the quantities
 
-    print(f'z={z}')
-    print(f'm_star,min = {np.min(x)}, m_star,med = {np.median(x)}, m_star,max = {np.max(x)}')
-    print(f'L_agn,bol,min = {np.min(q)}, L_agn,bol,med = {np.median(q)}, L_agn,bol,max = {np.max(q)}')
-    print(f'L_agn,uv,min = {np.min(y)}, L_agn,uv,med = {np.median(y)}, L_agn,uv,max = {np.max(y)}')
+    # -- this will calculate the weighted quantiles of the distribution
+    quantiles = [0.84,0.50,0.16] # quantiles for range
+    bins = np.arange(8,11, 0.1) # x-coordinate bins
+    bincen = (bins[:-1]+bins[1:])/2.
+    out = flares.binned_weighted_quantile(x,y,ws,bins,quantiles)
 
+    # --- plot the median and quantiles for bins with >10 galaxies
 
-    binw = 0.5
-    bins = np.arange(28,32,binw)
-    b_c = bins[:-1]+binw/2
+    N, bin_edges = np.histogram(x, bins=bins)
+    Ns = N > 10
 
-    N_weighted_total, edges_total = np.histogram(yy, bins=bins, weights=ws)
+    ax.plot(bincen, out[:, 1], c=cmap(norm(z)), ls=':')
+    ax.plot(bincen[Ns], out[:, 1][Ns], c=cmap(norm(z)), label=rf'$\rm z={int(z)}$')
+    ax.fill_between(bincen[Ns], out[:, 0][Ns], out[:, 2][Ns], color=cmap(norm(z)),
+                                   alpha=0.2)
 
-    N_weighted_gal, edges_gal = np.histogram(lstar[s_t], bins = bins, weights = ws)
+    ax.axhline(1/4.4, c='k', alpha=0.8)
 
-    N_weighted, edges = np.histogram(y, bins = bins, weights = ws)
-
-    h = 0.6777
-    vol = (4/3)*np.pi*(14/h)**3
-
-    phi_total = N_weighted_total/(binw*vol)
-    phi_gal = N_weighted_gal/(binw*vol)
-    phi = N_weighted/(binw*vol)
-
-    ax.plot(bins[:-1] + binw / 2, np.log10(phi_gal), ls='dotted', c=cmap(norm(z)), label=rf'Stellar')
-    ax.plot(bins[:-1] + binw / 2, np.log10(phi), ls='dashed', c=cmap(norm(z)), label = rf'AGN')
-    ax.plot(bins[:-1] + binw / 2, np.log10(phi_total), ls='-', c=cmap(norm(z)), label=rf'Total')
-
-    ax.text(0.7, 0.9, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=ax.transAxes,
+    ax.text(0.7, 0.2, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=ax.transAxes,
                            color=cmap(norm(z)))
 
-    ax.set_ylim(-8, -2)
+    #ax.set_ylim(-8, -2)
 
-    ax.set_xlabel(r'$\rm log_{10}[L_{FUV}\;/\;erg\,s^{-1}\,Hz^{-1}]$')
-    ax.set_ylabel(r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\, dex^{-1}]$')
+    ax.set_xlabel(r'$\rm log_{10}[M_{*}\;/\;M_{\odot}]$')
+    ax.set_ylabel(r'$\rm L_{AGN, \,UV} \; / \; L_{AGN, \,bol}$')
 
-    ax.legend(loc='lower left', prop={'size': 6})
+    #ax.legend(loc='lower left', prop={'size': 6})
 
-    fig.savefig(f'figures/individual_lfs/uvlf_{int(z)}.pdf', bbox_inches='tight')
+    fig.savefig(f'figures/bolcorr/individual/bolcorr_Mstar_{int(z)}.pdf', bbox_inches='tight')
     fig.clf()
 

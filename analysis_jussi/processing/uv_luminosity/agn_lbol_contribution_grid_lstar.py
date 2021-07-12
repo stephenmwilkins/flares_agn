@@ -45,7 +45,7 @@ norm = mpl.colors.Normalize(vmin=5., vmax=10.)
 
 flares_dir = '../../../../data/simulations'
 
-fl = flares.flares(f'{flares_dir}/flares_no_particlesed.hdf5', sim_type='FLARES')
+fl = flares.flares(f'{flares_dir}/flares_no_particlesed.hdf5', sim_type='FLARES') #_no_particlesed
 df = pd.read_csv(f'{flares_dir}/weights_grid.txt')
 halo = fl.halos
 print(fl.tags) # print list of available snapshots
@@ -55,6 +55,7 @@ MBH = fl.load_dataset('BH_Mass', arr_type='Galaxy') # Black hole mass of galaxy
 MDOT = fl.load_dataset('BH_Mdot', arr_type='Galaxy') # Black hole accretion rate
 MS = fl.load_dataset('Mstar_30', arr_type='Galaxy') # Black hole accretion rate
 LFUV = fl.load_dataset('FUV', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity/Intrinsic/')
+LBOL = fl.load_dataset('Intrinsic', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Indices/Lbol/')
 
 #LUM = fl.load_dataset('DustModelI', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity')
 
@@ -65,25 +66,22 @@ df = pd.read_csv(f'{flares_dir}/weights_grid.txt')
 weights = np.array(df['weights'])
 
 
-for i, tag in enumerate(np.flip(fl.tags)):
+fig, axes = plt.subplots(2, 3, figsize = (6, 4), sharex = True, sharey=True)
+fig.subplots_adjust(left=0.07, bottom=0.15, top=1.0, right=0.85, wspace=0.0, hspace=0.0)
 
-    fig = plt.figure(figsize=(3, 3))
-    left = 0.2
-    bottom = 0.2
-    width = 0.75
-    height = 0.75
-    ax = fig.add_axes((left, bottom, width, height))
+for i, tag in enumerate(np.flip(fl.tags)):
 
 
     z = np.flip(fl.zeds)[i]
-    ws, x, y, mstar, lstar = np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
+    ws, x, y, mstar, lstar, lbol = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
     for ii in range(len(halo)):
-        s = (np.log10(MS[halo[ii]][tag])+10 > 7)
+        s = (np.log10(MS[halo[ii]][tag])+10 > 8)
         ws = np.append(ws, np.ones(np.shape(X[halo[ii]][tag][s]))*weights[ii])
         x = np.append(x, X[halo[ii]][tag][s])
         y = np.append(y, Y[halo[ii]][tag][s])
         mstar = np.append(mstar, np.log10(MS[halo[ii]][tag][s])+10)
         lstar = np.append(lstar, np.log10(LFUV[halo[ii]][tag][s]))
+        lbol = np.append(lbol, np.log10(LBOL[halo[ii]][tag][s]))
 
     h = 0.6777  # Hubble parameter
 
@@ -97,62 +95,43 @@ for i, tag in enumerate(np.flip(fl.tags)):
     y *= 10**10
 
 
-    b = t_bb(y, x)
+    q = np.array([l_agn(g, etta=0.1) for g in x])
 
-    s_t = np.array(b) > 10**4
+    x = lbol
 
-    ws = ws[s_t]
+    y = np.log10(10**q / 10**lbol)
 
-    q = np.array([l_agn(g, etta=0.1) for g in x[s_t]])
+    # -- this will calculate the weighted quantiles of the distribution
+    quantiles = [0.84, 0.50, 0.16]  # quantiles for range
+    bins = np.arange(44, 47, 0.25)  #  x-coordinate bins
+    bincen = (bins[:-1] + bins[1:]) / 2.
+    out = flares.binned_weighted_quantile(x, y, ws, bins, quantiles)
 
-    x = np.array(mstar)[s_t]
+    # --- plot the median and quantiles for bins with >10 galaxies
 
+    N, bin_edges = np.histogram(x, bins=bins)
+    Ns = N > 10
 
-    y = (ratio_from_t(b[s_t]))*10**q
+    axes.flatten()[i].plot(bincen, out[:, 1], c=cmap(norm(z)), ls=':')
+    axes.flatten()[i].plot(bincen[Ns], out[:, 1][Ns], c=cmap(norm(z)), label=rf'$\rm z={int(z)}$')
+    axes.flatten()[i].fill_between(bincen[Ns], out[:, 0][Ns], out[:, 2][Ns], color=cmap(norm(z)),
+                                   alpha=0.2)
 
-    y = np.log10(y /  ((const.c/(1500*u.AA).to(u.m)).to(u.Hz)).value)
+    axes.flatten()[i].axhline(0, alpha=0.8, c='k', ls='--', linewidth=1)
 
-    yy = np.log10(10**lstar[s_t] + 10**y)
+    axes.flatten()[i].set_xlim(44)
+    axes.flatten()[i].set_ylim(-8)
 
-    # --- simply print the ranges of the quantities
-
-    print(f'z={z}')
-    print(f'm_star,min = {np.min(x)}, m_star,med = {np.median(x)}, m_star,max = {np.max(x)}')
-    print(f'L_agn,bol,min = {np.min(q)}, L_agn,bol,med = {np.median(q)}, L_agn,bol,max = {np.max(q)}')
-    print(f'L_agn,uv,min = {np.min(y)}, L_agn,uv,med = {np.median(y)}, L_agn,uv,max = {np.max(y)}')
-
-
-    binw = 0.5
-    bins = np.arange(28,32,binw)
-    b_c = bins[:-1]+binw/2
-
-    N_weighted_total, edges_total = np.histogram(yy, bins=bins, weights=ws)
-
-    N_weighted_gal, edges_gal = np.histogram(lstar[s_t], bins = bins, weights = ws)
-
-    N_weighted, edges = np.histogram(y, bins = bins, weights = ws)
-
-    h = 0.6777
-    vol = (4/3)*np.pi*(14/h)**3
-
-    phi_total = N_weighted_total/(binw*vol)
-    phi_gal = N_weighted_gal/(binw*vol)
-    phi = N_weighted/(binw*vol)
-
-    ax.plot(bins[:-1] + binw / 2, np.log10(phi_gal), ls='dotted', c=cmap(norm(z)), label=rf'Stellar')
-    ax.plot(bins[:-1] + binw / 2, np.log10(phi), ls='dashed', c=cmap(norm(z)), label = rf'AGN')
-    ax.plot(bins[:-1] + binw / 2, np.log10(phi_total), ls='-', c=cmap(norm(z)), label=rf'Total')
-
-    ax.text(0.7, 0.9, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=ax.transAxes,
+    axes.flatten()[i].text(0.7, 0.9, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
                            color=cmap(norm(z)))
 
-    ax.set_ylim(-8, -2)
 
-    ax.set_xlabel(r'$\rm log_{10}[L_{FUV}\;/\;erg\,s^{-1}\,Hz^{-1}]$')
-    ax.set_ylabel(r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\, dex^{-1}]$')
+    #ax.set_xlabel(r'$\rm log_{10}[L_{FUV}\;/\;erg\,s^{-1}\,Hz^{-1}]$')
+    #ax.set_ylabel(r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\, dex^{-1}]$')
 
-    ax.legend(loc='lower left', prop={'size': 6})
+fig.text(0.01, 0.55, r'$\rm log_{10}[L_{AGN, bol} \; / \; L_{stellar, bol}]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
+fig.text(0.45,0.05, r'$\rm log_{10}[M_{*}\;/\;M_{\odot}]$', ha = 'center', va = 'bottom', fontsize=10)
 
-    fig.savefig(f'figures/individual_lfs/uvlf_{int(z)}.pdf', bbox_inches='tight')
-    fig.clf()
+fig.savefig(f'figures/agn_bol_frac_grid_lstar.pdf', bbox_inches='tight')
+fig.clf()
 
