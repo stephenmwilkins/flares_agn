@@ -27,32 +27,31 @@ print(fl.tags) # print list of available snapshots
 tags = fl.tags  #This would be z=5
 
 
-MBH = fl.load_dataset('BH_Mass', arr_type='Galaxy') # Black hole mass of galaxy
+Mstar = fl.load_dataset('Mstar_30', arr_type='Galaxy') # Black hole mass of galaxy
 MDOT = fl.load_dataset('BH_Mdot', arr_type='Galaxy') # Black hole accretion rate
 
-Y = MDOT
-X = MBH
+X = MDOT
+Y = Mstar
 
 weights = np.array(df['weights'])
 
-fig = plt.figure(figsize=(3, 3))
-left = 0.2
-bottom = 0.2
-width = 0.75
-height = 0.75
-ax = fig.add_axes((left, bottom, width, height))
 
 for i, tag in enumerate(fl.tags):
 
+    fig = plt.figure(figsize=(3, 3))
+    left = 0.2
+    bottom = 0.2
+    width = 0.75
+    height = 0.75
+    ax = fig.add_axes((left, bottom, width, height))
 
     z = fl.zeds[i]
     ws, x, y = np.array([]), np.array([]), np.array([])
     for ii in range(len(halo)):
-        s = (np.log10(X[halo[ii]][tag])+10>bhm_cut)
+        s = (np.log10(Y[halo[ii]][tag]) + 10 > bhm_cut) & (np.log10(Mstar[halo[ii]][tag]) + 10 > 8)
         ws = np.append(ws, np.ones(np.shape(X[halo[ii]][tag][s]))*weights[ii])
-        x = np.append(x, np.log10(X[halo[ii]][tag][s]))
-        y = np.append(y, Y[halo[ii]][tag][s])
-
+        x = np.append(x, X[halo[ii]][tag][s])
+        y = np.append(y, np.log10(Y[halo[ii]][tag][s]))
 
     import astropy.constants as constants
     import astropy.units as units
@@ -61,12 +60,13 @@ for i, tag in enumerate(fl.tags):
 
 
     # converting MBHacc units to M_sol/yr
-    y *= h * 6.445909132449984E23  # g/s
-    y = y/constants.M_sun.to('g').value  # convert to M_sol/s
-    y *= units.yr.to('s')  # convert to M_sol/yr
-    y = np.log10(y)
+    x *= h * 6.445909132449984E23  # g/s
+    x = x/constants.M_sun.to('g').value  # convert to M_sol/s
+    x *= units.yr.to('s')  # convert to M_sol/yr
+    x = np.log10(x)
 
-    x += 10 # units are 1E10 M_sol
+
+    y += 10 # units are 1E10 M_sol
 
     # --- simply print the ranges of the quantities
 
@@ -77,7 +77,7 @@ for i, tag in enumerate(fl.tags):
 
     # -- this will calculate the weighted quantiles of the distribution
     quantiles = [0.84,0.50,0.16] # quantiles for range
-    bins = np.arange(5, 9.5, 0.2) # x-coordinate bins, in this case stellar mass
+    bins = np.arange(-6,2, 0.5) # x-coordinate bins, in this case stellar mass
     bincen = (bins[:-1]+bins[1:])/2.
     out = flares.binned_weighted_quantile(x,y,ws,bins,quantiles)
 
@@ -89,16 +89,13 @@ for i, tag in enumerate(fl.tags):
     ax.plot(bincen[Ns], out[:, 1][Ns], c=cmap(norm(z)), label=rf'$\rm z={int(z)}$')
     ax.fill_between(bincen[Ns], out[:, 0][Ns], out[:, 2][Ns], color=cmap(norm(z)), alpha=0.2)
 
+    ax.text(0.2, 0.9, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=ax.transAxes,
+            color=cmap(norm(z)))
 
+    ax.set_xlim(-6, 2)
+    ax.set_ylim(8, 11)
 
-ax.legend(prop={'size': 6})
-
-# --- scatter plot
-
-ax.set_xlim(5.5)
-ax.set_ylim(-4)
-
-ax.set_ylabel(r'$\rm log_{10}[\dot{M}_{BH}\;/\;M_{\odot}\,yr^{-1}]$')
-ax.set_xlabel(r'$\rm log_{10}[M_{BH}\;/\;M_{\odot}]$')
-fig.savefig(f'figures/Mdot_BHM.pdf', bbox_inches='tight')
-fig.clf()
+    ax.set_xlabel(r'$\rm log_{10}[\dot{M}_{BH}\;/\;M_{\odot}\,yr^{-1}]$')
+    ax.set_ylabel(r'$\rm log_{10}[M_{*}\;/\;M_{\odot}]$')
+    fig.savefig(f'figures/individual/MS_Mdot_{int(z)}.pdf', bbox_inches='tight')
+    fig.clf()

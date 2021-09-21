@@ -104,7 +104,7 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
     # -- this will calculate the weighted quantiles of the distribution
     quantiles = [0.84, 0.50, 0.16]  # quantiles for range
-    bins = np.arange(8, 11, 0.1)  #  x-coordinate bins
+    bins = np.arange(8, 11, 0.2)  #  x-coordinate bins
     bincen = (bins[:-1] + bins[1:]) / 2.
     out = flares.binned_weighted_quantile(x, y, ws, bins, quantiles)
 
@@ -138,6 +138,6 @@ for i, tag in enumerate(np.flip(fl.tags)):
 fig.text(0.01, 0.55, r'$\rm L_{AGN, \,UV} \; / \; L_{AGN, \,bol}$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
 fig.text(0.45,0.05, r'$\rm log_{10}[M_{*}\;/\;M_{\odot}]$', ha = 'center', va = 'bottom', fontsize=10)
 
-fig.savefig(f'figures/bolcorr/bolcorr_grid.pdf', bbox_inches='tight')
+fig.savefig(f'figures/bolcorr/bolcorr_grid_coarse.pdf', bbox_inches='tight')
 fig.clf()
 

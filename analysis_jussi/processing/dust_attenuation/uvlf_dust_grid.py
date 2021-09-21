@@ -39,12 +39,22 @@ def l_agn(m_dot, etta=0.1):
     l = (etta*m_dot*c**2).to(u.erg/u.s)
     return np.log10(l.value) # output in log10(erg/s)
 
+def tau_dust(bh_los, dtm_ratio, lam=1500, kappa=0.0795, gamma=-1):
+    # Defaults are for 1500Å (FUV), kappa_ISM from Vijayan et al. 2021, gamma from Wilkins et al. 2017
+    tau = kappa * dtm_ratio * bh_los * (lam/5500)**gamma
+    return tau
+
+def attn(lum, bh_los, dtm_ratio, lam=1500, kappa=0.0795, gamma=-1):
+    # lum = log10(L)
+    return np.log10(10**lum*np.exp(-1*tau_dust(bh_los, dtm_ratio, lam, kappa, gamma)))
+
 
 cmap = mpl.cm.plasma
 norm = mpl.colors.Normalize(vmin=5., vmax=10.)
 
 flares_dir = '../../../../data/simulations'
 
+#fl = flares.flares(f'{flares_dir}/flares_old.hdf5', sim_type='FLARES') #_no_particlesed
 fl = flares.flares(f'{flares_dir}/flares_no_particlesed.hdf5', sim_type='FLARES') #_no_particlesed
 df = pd.read_csv(f'{flares_dir}/weights_grid.txt')
 halo = fl.halos
@@ -54,7 +64,10 @@ tags = fl.tags #This would be z=5
 MBH = fl.load_dataset('BH_Mass', arr_type='Galaxy') # Black hole mass of galaxy
 MDOT = fl.load_dataset('BH_Mdot', arr_type='Galaxy') # Black hole accretion rate
 MS = fl.load_dataset('Mstar_30', arr_type='Galaxy') # Black hole accretion rate
-LFUV = fl.load_dataset('FUV', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity/Intrinsic/')
+LFUV = fl.load_dataset('FUV', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity/DustModelI/')
+LBOL = fl.load_dataset('DustModelI', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Indices/Lbol/')
+BHLOS = fl.load_dataset('BH_los', arr_type='Galaxy')
+DTM = fl.load_dataset('DTM', arr_type='Galaxy')
 
 #LUM = fl.load_dataset('DustModelI', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity')
 
@@ -65,14 +78,15 @@ df = pd.read_csv(f'{flares_dir}/weights_grid.txt')
 weights = np.array(df['weights'])
 
 
+attn_out = {}
+
 fig, axes = plt.subplots(2, 3, figsize = (6, 4), sharex = True, sharey=True)
 fig.subplots_adjust(left=0.07, bottom=0.15, top=1.0, right=0.85, wspace=0.0, hspace=0.0)
-
 for i, tag in enumerate(np.flip(fl.tags)):
 
-
     z = np.flip(fl.zeds)[i]
-    ws, x, y, mstar, lstar = np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
+
+    ws, x, y, mstar, lstar, los, dtm = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
     for ii in range(len(halo)):
         s = (np.log10(MS[halo[ii]][tag])+10 > 8)
         ws = np.append(ws, np.ones(np.shape(X[halo[ii]][tag][s]))*weights[ii])
@@ -80,6 +94,8 @@ for i, tag in enumerate(np.flip(fl.tags)):
         y = np.append(y, Y[halo[ii]][tag][s])
         mstar = np.append(mstar, np.log10(MS[halo[ii]][tag][s])+10)
         lstar = np.append(lstar, np.log10(LFUV[halo[ii]][tag][s]))
+        los = np.append(los, BHLOS[halo[ii]][tag][s])
+        dtm = np.append(dtm, DTM[halo[ii]][tag][s])
 
     h = 0.6777  # Hubble parameter
 
@@ -109,6 +125,10 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
     y = np.log10(y /  ((const.c/(1500*u.AA).to(u.m)).to(u.Hz)).value)
 
+    y = attn(y, los[s_t], dtm[s_t])
+
+    attn_out[str(z)] = {'attn': (attn(0, los[s_t], dtm[s_t])), 'mstar': mstar[s_t], 'ws': ws, 'tau': tau_dust(los[s_t], dtm[s_t])}
+
     yy = np.log10(10**lstar[s_t] + 10**y)
 
     # --- simply print the ranges of the quantities
@@ -129,6 +149,23 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
     N_weighted, edges = np.histogram(y, bins = bins, weights = ws)
 
+    N_number_of_agn, edges =  np.histogram(y, bins = bins)
+    Ns_agn = (N_number_of_agn > 5)
+    not_Ns_agn = np.invert(Ns_agn)
+    uplims_agn = np.ones_like(not_Ns_agn)
+    err = np.sqrt(np.histogram(y, bins = bins, weights = ws**2)[0])
+    err_lo = err
+    err_hi = err
+
+
+    N_number_of_gal, edges = np.histogram(lstar[s_t], bins=bins)
+    Ns_gal = (N_number_of_gal > 5)
+    not_Ns_gal = np.invert(Ns_gal)
+
+    N_number_of_total, edges = np.histogram(yy, bins=bins)
+    Ns_total = (N_number_of_total > 5)
+    not_Ns_total = np.invert(Ns_total)
+
     h = 0.6777
     vol = (4/3)*np.pi*(14/h)**3
 
@@ -136,9 +173,31 @@ for i, tag in enumerate(np.flip(fl.tags)):
     phi_gal = N_weighted_gal/(binw*vol)
     phi = N_weighted/(binw*vol)
 
-    axes.flatten()[i].plot(bins[:-1] + binw / 2, np.log10(phi_gal), ls='dotted', c=cmap(norm(z)))
-    axes.flatten()[i].plot(bins[:-1] + binw / 2, np.log10(phi), ls='dashed', c=cmap(norm(z)))
-    axes.flatten()[i].plot(bins[:-1] + binw / 2, np.log10(phi_total), ls='-', c=cmap(norm(z)))
+    err_lo /= (binw*vol)
+    err_hi /= (binw*vol)
+
+    err_lo = (err_lo)/(np.log(10)*phi)
+    err_hi = (err_hi)//(np.log(10)*phi)
+
+
+    axes.flatten()[i].plot(bins[:-1] + binw / 2, np.log10(phi_gal), ls='dotted', c=cmap(norm(z)), alpha=0.3)
+    axes.flatten()[i].plot(bins[:-1] + binw / 2, np.log10(phi), ls='dashed', c=cmap(norm(z)), alpha=0.3)
+    axes.flatten()[i].plot(bins[:-1] + binw / 2, np.log10(phi_total), ls='-', c=cmap(norm(z)), alpha=0.3)
+
+
+    axes.flatten()[i].plot(bins[:-1][Ns_gal] + binw / 2, np.log10(phi_gal[Ns_gal]), ls='dotted', c=cmap(norm(z)))
+    axes.flatten()[i].plot(bins[:-1][Ns_agn] + binw / 2, np.log10(phi[Ns_agn]), ls='dashed', c=cmap(norm(z)))
+    axes.flatten()[i].plot(bins[:-1][Ns_total] + binw / 2, np.log10(phi_total[Ns_total]), ls='-', c=cmap(norm(z)))
+
+    '''
+    axes.flatten()[i].errorbar(bins[:-1][not_Ns_gal] + binw / 2, np.log10(phi_gal[not_Ns_gal]), c=cmap(norm(z)), marker='^', markersize=2,
+                               linestyle='none')
+    axes.flatten()[i].errorbar(bins[:-1][not_Ns_agn] + binw / 2, np.log10(phi[not_Ns_agn]), yerr=0.2, c=cmap(norm(z)), lolims=uplims_agn[not_Ns_agn], marker='o', markersize=2,
+            linestyle='none', elinewidth=1, capsize=1)
+    axes.flatten()[i].errorbar(bins[:-1][Ns_agn] + binw / 2, np.log10(phi[Ns_agn]), yerr=[err_lo[Ns_agn], err_hi[Ns_agn]],
+                               c=cmap(norm(z)), marker='o', markersize=2,
+                               linestyle='none', elinewidth=1, capsize=1)
+    '''
 
     axes.flatten()[i].text(0.7, 0.9, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
                            color=cmap(norm(z)))
@@ -159,6 +218,7 @@ axes.flatten()[0].legend(loc='lower left', prop={'size': 6})
 fig.text(0.01, 0.55, r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\, dex^{-1}]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
 fig.text(0.45,0.05, r'$\rm log_{10}[L_{FUV}\;/\;erg\,s^{-1}\,Hz^{-1}]$', ha = 'center', va = 'bottom', fontsize=10)
 
-fig.savefig(f'figures/uvlf_grid_crap.pdf', bbox_inches='tight')
+fig.savefig(f'figures/uvlf_dust_grid.pdf', bbox_inches='tight')
 fig.clf()
 
+pickle.dump(attn_out, open('attenuation.p', 'wb'))

@@ -12,7 +12,7 @@ import FLARE.photom as photom
 import FLARE.plt as fplt
 
 # Selection
-bhm_cut = 0  # minimum considered black-hole mass selection in log10(M_BH)
+bhm_cut = 5.2  # minimum considered black-hole mass selection in log10(M_BH)
 
 flares_dir = '../../../data/simulations'
 
@@ -46,25 +46,27 @@ Y = MBH
 df = pd.read_csv(f'{flares_dir}/weights_grid.txt')
 weights = np.array(df['weights'])
 
-fig = plt.figure(figsize=(3,3))
-left  = 0.2
-bottom = 0.2
-width = 0.75
-height = 0.75
-ax = fig.add_axes((left, bottom, width, height))
-
 
 for i, tag in enumerate(fl.tags):
+
+    fig = plt.figure(figsize=(3, 3))
+    left = 0.2
+    bottom = 0.2
+    width = 0.75
+    height = 0.75
+    ax = fig.add_axes((left, bottom, width, height))
+
     z = fl.zeds[i]
     ws, x, y = np.array([]), np.array([]), np.array([])
     for ii in range(len(halo)):
-        s = (np.log10(Mstar[halo[ii]][tag]) + 10 > 0)
+        s = (np.log10(Y[halo[ii]][tag])+10>bhm_cut)&(np.log10(Mstar[halo[ii]][tag]) + 10 > 8)
         ws = np.append(ws, np.ones(np.shape(X[halo[ii]][tag][s]))*weights[ii])
         x = np.append(x, np.log10(X[halo[ii]][tag][s]))
-        y = np.append(y, Y[halo[ii]][tag][s])
+        y = np.append(y, np.log10(Y[halo[ii]][tag][s]))
 
 
     x += 10 # units are 1E10 M_sol
+    y += 10 # units are 1E10 M_sol
 
     # --- simply print the ranges of the quantities
 
@@ -73,30 +75,31 @@ for i, tag in enumerate(fl.tags):
     print(np.min(y),np.median(y),np.max(y))
 
 
-    binw = 0.05
-    bins = np.arange(6, 11.5, binw)
+    # -- this will calculate the weighted quantiles of the distribution
+    quantiles = [0.84,0.50,0.16] # quantiles for range
+    bins = np.arange(9, 11.5, 0.25) # x-coordinate bins, in this case stellar mass
+    bincen = (bins[:-1]+bins[1:])/2.
+    out = flares.binned_weighted_quantile(x,y,ws,bins,quantiles)
 
-    b_c = bins[:-1] + binw / 2
+    # --- plot the median and quantiles for bins with >10 galaxies
 
-    w = np.array((y > 0), dtype=np.float32)
+    N, bin_edges = np.histogram(x, bins=bins)
+    Ns = N > 10
+    ax.plot(bincen, out[:, 1], c=cmap(norm(z)), ls=':')
+    ax.plot(bincen[Ns], out[:, 1][Ns], c=cmap(norm(z)), label=rf'$\rm z={int(z)}$')
+    ax.fill_between(bincen[Ns], out[:, 0][Ns], out[:, 2][Ns], color=cmap(norm(z)), alpha=0.2)
 
-    N_BH, edges = np.histogram(x, bins=bins, weights=w)
-    N_gal, edges = np.histogram(x, bins=bins)
+    ax.text(0.2, 0.9, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=ax.transAxes,
+            color=cmap(norm(z)))
 
-    ax.plot(bins[:-1] + binw / 2, N_BH/N_gal, c=cmap(norm(z)), label=rf'$\rm z={int(z)}$')
+    ax.set_xlim(9, 11.2)
+    ax.set_ylim(5.5, 9)
+
+    ax.set_xlabel(r'$\rm log_{10}[M_{\star}\;/\;M_{\odot}]$')
+    ax.set_ylabel(r'$\rm log_{10}[M_{BH}\;/\;M_{\odot}]$')
+    fig.savefig(f'figures/individual/MBH_{int(z)}.pdf', bbox_inches='tight')
+    fig.clf()
 
 
 
-ax.legend(prop={'size': 6})
 
-# --- scatter plot
-
-#ax.scatter(x,y,s=3,c='k',alpha=0.1)
-
-ax.set_ylim(0, 1.2)
-ax.set_xlim(7., 10.)
-
-ax.set_xlabel(r'$\rm log_{10}[M_{\star}\;/\;M_{\odot}]$')
-ax.set_ylabel(r'$\rm f_{BH}$')
-fig.savefig(f'figures/BH_fraction.pdf', bbox_inches='tight')
-fig.clf()

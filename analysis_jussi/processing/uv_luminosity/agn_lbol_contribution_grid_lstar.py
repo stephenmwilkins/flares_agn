@@ -103,7 +103,7 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
     # -- this will calculate the weighted quantiles of the distribution
     quantiles = [0.84, 0.50, 0.16]  # quantiles for range
-    bins = np.arange(44, 47, 0.25)  #  x-coordinate bins
+    bins = np.arange(44, 47, 0.1)  #  x-coordinate bins
     bincen = (bins[:-1] + bins[1:]) / 2.
     out = flares.binned_weighted_quantile(x, y, ws, bins, quantiles)
 
@@ -115,22 +115,28 @@ for i, tag in enumerate(np.flip(fl.tags)):
     axes.flatten()[i].plot(bincen, out[:, 1], c=cmap(norm(z)), ls=':')
     axes.flatten()[i].plot(bincen[Ns], out[:, 1][Ns], c=cmap(norm(z)), label=rf'$\rm z={int(z)}$')
     axes.flatten()[i].fill_between(bincen[Ns], out[:, 0][Ns], out[:, 2][Ns], color=cmap(norm(z)),
-                                   alpha=0.2)
+                                   alpha=0.4)
 
     axes.flatten()[i].axhline(0, alpha=0.8, c='k', ls='--', linewidth=1)
 
     axes.flatten()[i].set_xlim(44)
-    axes.flatten()[i].set_ylim(-8)
+    axes.flatten()[i].set_ylim(-8, 1.5)
+    axes.flatten()[i].set_xticks([44, 45, 46])
 
-    axes.flatten()[i].text(0.7, 0.9, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
-                           color=cmap(norm(z)))
+    axes.flatten()[i].text(0.97, 0.92, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
+                           color=cmap(norm(z)), ha='right')
 
+    s_outshine = (y > 0)
+
+    print(np.sum(s_outshine))
+
+    axes.flatten()[i].scatter(x[s_outshine], y[s_outshine], s=5, color=cmap(norm(z)))
 
     #ax.set_xlabel(r'$\rm log_{10}[L_{FUV}\;/\;erg\,s^{-1}\,Hz^{-1}]$')
     #ax.set_ylabel(r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\, dex^{-1}]$')
 
 fig.text(0.01, 0.55, r'$\rm log_{10}[L_{AGN, bol} \; / \; L_{stellar, bol}]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
-fig.text(0.45,0.05, r'$\rm log_{10}[M_{*}\;/\;M_{\odot}]$', ha = 'center', va = 'bottom', fontsize=10)
+fig.text(0.45,0.05, r'$\rm log_{10}[L_{stellar, bol}\;/\;erg\,s^{-1}]$', ha = 'center', va = 'bottom', fontsize=10)
 
 fig.savefig(f'figures/agn_bol_frac_grid_lstar.pdf', bbox_inches='tight')
 fig.clf()

@@ -55,7 +55,6 @@ MBH = fl.load_dataset('BH_Mass', arr_type='Galaxy') # Black hole mass of galaxy
 MDOT = fl.load_dataset('BH_Mdot', arr_type='Galaxy') # Black hole accretion rate
 MS = fl.load_dataset('Mstar_30', arr_type='Galaxy') # Black hole accretion rate
 LFUV = fl.load_dataset('FUV', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity/Intrinsic/')
-LBOL = fl.load_dataset('Intrinsic', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Indices/Lbol/')
 
 #LUM = fl.load_dataset('DustModelI', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity')
 
@@ -73,7 +72,7 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
 
     z = np.flip(fl.zeds)[i]
-    ws, x, y, mstar, lstar, lbol = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
+    ws, x, y, mstar, lstar = np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
     for ii in range(len(halo)):
         s = (np.log10(MS[halo[ii]][tag])+10 > 8)
         ws = np.append(ws, np.ones(np.shape(X[halo[ii]][tag][s]))*weights[ii])
@@ -81,7 +80,6 @@ for i, tag in enumerate(np.flip(fl.tags)):
         y = np.append(y, Y[halo[ii]][tag][s])
         mstar = np.append(mstar, np.log10(MS[halo[ii]][tag][s])+10)
         lstar = np.append(lstar, np.log10(LFUV[halo[ii]][tag][s]))
-        lbol = np.append(lbol, np.log10(LBOL[halo[ii]][tag][s]))
 
     h = 0.6777  # Hubble parameter
 
@@ -95,51 +93,73 @@ for i, tag in enumerate(np.flip(fl.tags)):
     y *= 10**10
 
 
-    q = np.array([l_agn(g, etta=0.1) for g in x])
+    b = t_bb(y, x)
 
-    x = mstar
+    s_t = np.array(b) > 10**4
 
-    y = np.log10(10**q / 10**lbol)
+    ws = ws[s_t]
 
-    # -- this will calculate the weighted quantiles of the distribution
-    quantiles = [0.84, 0.50, 0.16]  # quantiles for range
-    bins = np.arange(8, 11, 0.1)  #  x-coordinate bins
-    bincen = (bins[:-1] + bins[1:]) / 2.
-    out = flares.binned_weighted_quantile(x, y, ws, bins, quantiles)
+    q = np.array([l_agn(g, etta=0.1) for g in x[s_t]])
 
-    # --- plot the median and quantiles for bins with >10 galaxies
+    x = np.array(mstar)[s_t]
 
-    N, bin_edges = np.histogram(x, bins=bins)
-    Ns = N > 10
 
-    axes.flatten()[i].plot(bincen, out[:, 1], c=cmap(norm(z)), ls=':')
-    axes.flatten()[i].plot(bincen[Ns], out[:, 1][Ns], c=cmap(norm(z)), label=rf'$\rm z={int(z)}$')
-    axes.flatten()[i].fill_between(bincen[Ns], out[:, 0][Ns], out[:, 2][Ns], color=cmap(norm(z)),
-                                   alpha=0.4)
+    y = (ratio_from_t(b[s_t]))*10**q
+    #y = (1/4.4) * 10 ** q
 
-    axes.flatten()[i].axhline(0, alpha=0.8, c='k', ls='--', linewidth=1)
+    y = np.log10(y /  ((const.c/(1500*u.AA).to(u.m)).to(u.Hz)).value)
 
-    s_outshine = (y > 0)
+    yy = np.log10(10**lstar[s_t] + 10**y)
 
-    print(np.sum(s_outshine))
+    # --- simply print the ranges of the quantities
 
-    axes.flatten()[i].scatter(x[s_outshine], y[s_outshine], s=5, color=cmap(norm(z)))
+    print(f'z={z}')
+    print(f'm_star,min = {np.min(x)}, m_star,med = {np.median(x)}, m_star,max = {np.max(x)}')
+    print(f'L_agn,bol,min = {np.min(q)}, L_agn,bol,med = {np.median(q)}, L_agn,bol,max = {np.max(q)}')
+    print(f'L_agn,uv,min = {np.min(y)}, L_agn,uv,med = {np.median(y)}, L_agn,uv,max = {np.max(y)}')
 
-    axes.flatten()[i].set_xlim(9, 11)
-    axes.flatten()[i].set_ylim(-8, 1.5)
 
-    axes.flatten()[i].set_xticks([9, 9.5, 10, 10.5])
+    binw = 0.5
+    bins = np.arange(28,32,binw)
+    b_c = bins[:-1]+binw/2
 
-    axes.flatten()[i].text(0.97, 0.92, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
-                           color=cmap(norm(z)), ha='right')
+    N_weighted_total, edges_total = np.histogram(yy, bins=bins)#, weights=ws)
+
+    N_weighted_gal, edges_gal = np.histogram(lstar[s_t], bins = bins)#, weights = ws)
+
+    N_weighted, edges = np.histogram(y, bins = bins)#, weights = ws)
+
+    h = 0.6777
+    vol = (4/3)*np.pi*(14/h)**3
+
+    phi_total = N_weighted_total
+    phi_gal = N_weighted_gal
+    phi = N_weighted
+
+    axes.flatten()[i].plot(bins[:-1] + binw / 2, np.log10(phi_gal), ls='dotted', c=cmap(norm(z)))
+    axes.flatten()[i].plot(bins[:-1] + binw / 2, np.log10(phi), ls='dashed', c=cmap(norm(z)))
+    axes.flatten()[i].plot(bins[:-1] + binw / 2, np.log10(phi_total), ls='-', c=cmap(norm(z)))
+
+    axes.flatten()[i].text(0.7, 0.9, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
+                           color=cmap(norm(z)))
+
+    axes.flatten()[i].set_ylim(0)
+    axes.flatten()[i].set_xlim(28.1, 31.4)
+    axes.flatten()[i].set_xticks([29, 30, 31])
+    axes.flatten()[i].set_yticks([0, 1, 2, 3])
 
 
     #ax.set_xlabel(r'$\rm log_{10}[L_{FUV}\;/\;erg\,s^{-1}\,Hz^{-1}]$')
     #ax.set_ylabel(r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\, dex^{-1}]$')
 
-fig.text(0.01, 0.55, r'$\rm log_{10}[L_{AGN, bol} \; / \; L_{stellar, bol}]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
-fig.text(0.45,0.05, r'$\rm log_{10}[M_{*}\;/\;M_{\odot}]$', ha = 'center', va = 'bottom', fontsize=10)
+axes.flatten()[0].plot(-99, -99, ls='dotted', c='k', alpha=0.6, label=rf'Stellar')
+axes.flatten()[0].plot(-99, -99, ls='dashed', c='k', alpha=0.6, label = rf'AGN')
+axes.flatten()[0].plot(-99, -99, ls='-', c='k', alpha=0.6, label=rf'Total')
+axes.flatten()[0].legend(loc='lower left', prop={'size': 6})
 
-fig.savefig(f'figures/agn_bol_frac_grid_mstar.pdf', bbox_inches='tight')
+fig.text(0.01, 0.55, r'$\rm log_{10}[N_{simulated} \; / \; dex^{-1}]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
+fig.text(0.45,0.05, r'$\rm log_{10}[L_{FUV}\;/\;erg\,s^{-1}\,Hz^{-1}]$', ha = 'center', va = 'bottom', fontsize=10)
+
+fig.savefig(f'figures/uvlf_numbers.pdf', bbox_inches='tight')
 fig.clf()
 

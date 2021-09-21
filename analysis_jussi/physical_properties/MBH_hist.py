@@ -16,7 +16,7 @@ norm = mpl.colors.Normalize(vmin=5., vmax=10.)
 
 flares_dir = '../../../data/simulations'
 
-fl = flares.flares(f'{flares_dir}/flares.hdf5', sim_type='FLARES')
+fl = flares.flares(f'{flares_dir}/flares_no_particlesed.hdf5', sim_type='FLARES')
 halo = fl.halos
 print(fl.tags) # print list of available snapshots
 tags = fl.tags
@@ -26,7 +26,7 @@ z = fl.zeds[-1] # get redshift
 
 
 MBH = fl.load_dataset('BH_Mass', arr_type='Galaxy') # Black hole mass of galaxy
-
+MS = fl.load_dataset('Mstar_30', arr_type='Galaxy') # Black hole accretion rate
 
 X = MBH
 
@@ -49,8 +49,9 @@ for i, tag in enumerate(fl.tags):
 
     ws, x = np.array([]), np.array([])
     for ii in range(len(halo)):
+        s = (np.log10(MS[halo[ii]][tag]) + 10 > 8)
         #ws = np.append(ws, np.ones(np.shape(X[halo[ii]][tag]))*weights[ii])
-        x = np.append(x, np.log10(X[halo[ii]][tag]))
+        x = np.append(x, np.log10(X[halo[ii]][tag][s]))
 
 
     x += 10 # units are 1E10 M_sol

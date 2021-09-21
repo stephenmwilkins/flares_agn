@@ -45,7 +45,7 @@ norm = mpl.colors.Normalize(vmin=5., vmax=10.)
 
 flares_dir = '../../../../data/simulations'
 
-fl = flares.flares(f'{flares_dir}/flares_no_particlesed.hdf5', sim_type='FLARES')
+fl = flares.flares(f'{flares_dir}/flares_no_particlesed.hdf5', sim_type='FLARES') #_no_particlesed
 df = pd.read_csv(f'{flares_dir}/weights_grid.txt')
 halo = fl.halos
 print(fl.tags) # print list of available snapshots
@@ -65,20 +65,16 @@ df = pd.read_csv(f'{flares_dir}/weights_grid.txt')
 weights = np.array(df['weights'])
 
 
-for i, tag in enumerate(np.flip(fl.tags)):
+fig, axes = plt.subplots(2, 3, figsize = (6, 4), sharex = True, sharey=True)
+fig.subplots_adjust(left=0.1, bottom=0.15, top=1.0, right=0.85, wspace=0.0, hspace=0.0)
 
-    fig = plt.figure(figsize=(3, 3))
-    left = 0.2
-    bottom = 0.2
-    width = 0.75
-    height = 0.75
-    ax = fig.add_axes((left, bottom, width, height))
+for i, tag in enumerate(np.flip(fl.tags)):
 
 
     z = np.flip(fl.zeds)[i]
     ws, x, y, mstar, lstar = np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
     for ii in range(len(halo)):
-        s = (np.log10(MS[halo[ii]][tag])+10 > 7)
+        s = (np.log10(MS[halo[ii]][tag])+10 > 8)
         ws = np.append(ws, np.ones(np.shape(X[halo[ii]][tag][s]))*weights[ii])
         x = np.append(x, X[halo[ii]][tag][s])
         y = np.append(y, Y[halo[ii]][tag][s])
@@ -97,45 +93,55 @@ for i, tag in enumerate(np.flip(fl.tags)):
     y *= 10**10
 
 
-    T_AGN = t_bb(y, x)
+    b = t_bb(y, x)
 
-    s_t = np.array(T_AGN) > 10**4
+    s_t = np.array(b) > 10**4
+
+    q = np.array([l_agn(g, etta=0.1) for g in x[s_t]])
 
     ws = ws[s_t]
 
-    x = np.array(mstar)[s_t]
+    x = q
 
-    y = (ratio_from_t(T_AGN[s_t]))
+    y = (ratio_from_t(b[s_t]))
     # --- simply print the ranges of the quantities
 
     # -- this will calculate the weighted quantiles of the distribution
-    quantiles = [0.84,0.50,0.16] # quantiles for range
-    bins = np.arange(8,11, 0.25) # x-coordinate bins
-    bincen = (bins[:-1]+bins[1:])/2.
-    out = flares.binned_weighted_quantile(x,y,ws,bins,quantiles)
+    quantiles = [0.84, 0.50, 0.16]  # quantiles for range
+    bins = np.arange(42, 47, 0.5)  #  x-coordinate bins
+    bincen = (bins[:-1] + bins[1:]) / 2.
+    out = flares.binned_weighted_quantile(x, y, ws, bins, quantiles)
 
     # --- plot the median and quantiles for bins with >10 galaxies
 
     N, bin_edges = np.histogram(x, bins=bins)
     Ns = N > 10
 
-    ax.plot(bincen, out[:, 1], c=cmap(norm(z)), ls=':')
-    ax.plot(bincen[Ns], out[:, 1][Ns], c=cmap(norm(z)), label=rf'$\rm z={int(z)}$')
-    ax.fill_between(bincen[Ns], out[:, 0][Ns], out[:, 2][Ns], color=cmap(norm(z)),
-                                   alpha=0.2)
+    axes.flatten()[i].plot(bincen, out[:, 1], c=cmap(norm(z)), ls=':')
+    axes.flatten()[i].plot(bincen[Ns], out[:, 1][Ns], c=cmap(norm(z)), label=rf'$\rm z={int(z)}$')
+    axes.flatten()[i].fill_between(bincen[Ns], out[:, 0][Ns], out[:, 2][Ns], color=cmap(norm(z)),
+                    alpha=0.2)
 
-    ax.axhline(1/4.4, c='k', alpha=0.8)
-
-    ax.text(0.7, 0.2, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=ax.transAxes,
+    axes.flatten()[i].text(0.7, 0.2, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
                            color=cmap(norm(z)))
 
-    #ax.set_ylim(-8, -2)
+    axes.flatten()[i].axhline(1 / 4.4, c='k', alpha=0.6)
+    #axes.flatten()[i].set_ylim(-8, -2.1)
+    #axes.flatten()[i].set_xlim(28.1, 31.4)
+    #axes.flatten()[i].set_xticks([29, 30, 31])
 
-    ax.set_xlabel(r'$\rm log_{10}[M_{*}\;/\;M_{\odot}]$')
-    ax.set_ylabel(r'$\rm L_{AGN, \,UV} \; / \; L_{AGN, \,bol}$')
 
-    #ax.legend(loc='lower left', prop={'size': 6})
+    #ax.set_xlabel(r'$\rm log_{10}[L_{FUV}\;/\;erg\,s^{-1}\,Hz^{-1}]$')
+    #ax.set_ylabel(r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\, dex^{-1}]$')
 
-    fig.savefig(f'figures/bolcorr/individual/coarsest/bolcorr_Mstar_{int(z)}.pdf', bbox_inches='tight')
-    fig.clf()
+#axes.flatten()[0].plot(-99, -99, ls='dotted', c='k', alpha=0.6, label=rf'Stellar')
+#axes.flatten()[0].plot(-99, -99, ls='dashed', c='k', alpha=0.6, label = rf'AGN')
+#axes.flatten()[0].plot(-99, -99, ls='-', c='k', alpha=0.6, label=rf'Total')
+#axes.flatten()[0].legend(loc='lower left', prop={'size': 6})
+
+fig.text(0.01, 0.55, r'$\rm L_{AGN, \,UV} \; / \; L_{AGN, \,bol}$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
+fig.text(0.45,0.05, r'$\rm log_{10}[L_{AGN, bol}\;/\;erg\,s^{-1}]$', ha = 'center', va = 'bottom', fontsize=10)
+
+fig.savefig(f'figures/bolcorr/bolcorr_grid_Lbol_coarse.pdf', bbox_inches='tight')
+fig.clf()
 

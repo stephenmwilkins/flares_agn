@@ -16,7 +16,7 @@ norm = mpl.colors.Normalize(vmin=5., vmax=10.)
 
 flares_dir = '../../../data/simulations'
 
-fl = flares.flares(f'{flares_dir}/flares.hdf5', sim_type='FLARES')
+fl = flares.flares(f'{flares_dir}/flares_no_particlesed.hdf5', sim_type='FLARES')
 df = pd.read_csv(f'{flares_dir}/weights_grid.txt')
 
 halo = fl.halos
@@ -25,7 +25,7 @@ tags = fl.tags  #This would be z=5
 
 
 Mdot = fl.load_dataset('BH_Mdot', arr_type='Galaxy') # Black hole mass of galaxy
-
+MS = fl.load_dataset('Mstar_30', arr_type='Galaxy') # Black hole accretion rate
 
 X = Mdot
 
@@ -47,8 +47,9 @@ for i, tag in enumerate(fl.tags):
     weights = np.array(df['weights'])
     ws, x = np.array([]), np.array([])
     for ii in range(len(halo)):
-        ws = np.append(ws, np.ones(np.shape(X[halo[ii]][tag]))*weights[ii])
-        x = np.append(x, X[halo[ii]][tag])
+        s = (np.log10(MS[halo[ii]][tag]) + 10 > 8)
+        ws = np.append(ws, np.ones(np.shape(X[halo[ii]][tag][s]))*weights[ii])
+        x = np.append(x, X[halo[ii]][tag][s])
 
     import astropy.constants as constants
     import astropy.units as units
@@ -64,7 +65,7 @@ for i, tag in enumerate(fl.tags):
 
     #x += 10 # units are 1E10 M_sol
 
-    binw = 0.25
+    binw = 0.5
     bins = np.arange(-25,4,binw)
     b_c = bins[:-1]+binw/2
 
@@ -80,7 +81,7 @@ for i, tag in enumerate(fl.tags):
 
 ax.legend(prop={'size': 6})
 
-#ax.set_xlim(5.5, 9.5)
+ax.set_xlim(-16)
 ax.set_ylim(-8)
 
 ax.set_xlabel(r'$\rm log_{10}[\dot{M}_{BH}\;/\;M_{\odot}\,yr^{-1}]$')

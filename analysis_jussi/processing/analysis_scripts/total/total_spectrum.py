@@ -16,9 +16,9 @@ import FLARE.plt as fplt
 
 uvlims = [1e3, 1e4]
 
-spectrum_index = 0
+spectrum_index = 2
 
-spectrum_parts = {'uv':[1400, 1600], 'optical':[4000, 8000]}
+spectrum_parts = {'uv':[1400, 1600], 'optical':[4000, 8000], 'ionising':[0, 912]}
 spectrum_part = list(spectrum_parts.keys())[spectrum_index]
 lims = spectrum_parts[spectrum_part]
 
@@ -43,7 +43,7 @@ for i in range(len(AGN_T)):
     lam, incident, transmitted, nebular, total, linecont = np.loadtxt(f'{output_dir}/{i+1}.cont', delimiter='\t',
                                                                       usecols=(0, 1, 2, 3, 4, 8)).T
 
-    ax.plot(np.log10(lam), np.log10(total),c = cmap(norm(np.log10(AGN_T[i]))))
+    ax.plot(np.log10(lam), np.log10(incident),c = cmap(norm(np.log10(AGN_T[i]))))
 
 cmapper = cm.ScalarMappable(norm=norm, cmap=cmap)
 cmapper.set_array([])
@@ -54,8 +54,8 @@ bar.set_ticks([4, 5, 6])
 cax.set_ylabel(r'$\rm log_{10}[T_{AGN} \; /\; K]$')
 
 
-ax.set_ylim(28, 43)
-ax.set_xlim(2,4)
+ax.set_ylim(30, 43)
+#ax.set_xlim(2,4)
 
 ax.axvline(np.log10(lims[0]), c='k')
 ax.axvline(np.log10(lims[1]), c='k')
@@ -64,4 +64,4 @@ ax.axvline(np.log10(lims[1]), c='k')
 ax.set_ylabel(r"$\rm log_{10}[\lambda F_{\lambda} \; / \; erg \;s^{-1}]$")
 ax.set_xlabel(r"$\rm log_{10}[\lambda \; / \; \AA]$")
 
-fig.savefig(f'figures/spectra/total_{spectrum_part}_test.pdf', bbox_inches='tight')
+fig.savefig(f'figures/spectra/incident_{spectrum_part}_test.pdf', bbox_inches='tight')

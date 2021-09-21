@@ -46,6 +46,7 @@ lbols = np.array([])
 luvs = np.array([])
 linc = np.array([])
 
+luv_integrate = np.array([])
 
 fig = plt.figure(figsize=(3,3))
 left  = 0.1
@@ -57,6 +58,7 @@ ax = fig.add_axes((left, bottom, width, height))
 
 bol_corr_optical = np.array([])
 bol_corr_uv = np.array([])
+bol_corr_uv_int = np.array([])
 
 for i in range(len(AGN_T)):
     lam_bol, incident_bol, transmitted_bol, nebular_bol, total_bol, linecont_bol = np.loadtxt(f'{output_dir_bol}/{i+1}.cont', delimiter='\t',
@@ -65,6 +67,7 @@ for i in range(len(AGN_T)):
     nu = lambda l: 3E8 / (l * 1E-10)
     lam_nu = lam_bol[::-1]
     tot_nu = total_bol[::-1]
+    int_nu = incident_bol[::-1]
 
 
     lam_fuv_idx = (np.abs(lam_bol - FUV)).argmin()
@@ -94,10 +97,16 @@ for i in range(len(AGN_T)):
     y6 = np.append(y6, np.mean(total_bol[s]) / 10**43)
 
     bol_corr_uv = np.append(bol_corr_uv, (np.interp(1500., lam_nu, tot_nu) / 1E43))
+    bol_corr_uv_int = np.append(bol_corr_uv_int, (np.interp(1500., lam_nu, int_nu) / 1E43))
     bol_corr_optical = np.append(bol_corr_optical, (np.interp(5500., lam_nu, tot_nu) / 1E43))
+
+    luv_integrate = np.append(luv_integrate, np.sum(tot_nu[s]/(lam_nu[s]))/1E43)
+    #luv_integrate = np.append(luv_integrate, np.sum(tot_nu[s] * 3E8 / (lam_nu[s] * 1E-10) ** 2) * 1E-10 / 1E43)
 
     #print(f'Exact: lamda={lam_bol[lam_fuv_idx]}, L_FUV={total_bol[lam_fuv_idx]}')
     #print(f'Mean: lamda=({lam_bol[(np.abs(lam_bol - lims[0])).argmin()]},{lam_bol[(np.abs(lam_bol - lims[1])).argmin()]}], L_FUV={np.mean(total_bol[s])}')
+
+    print(np.sum(int_nu/(lam_nu)))
 
 ratio_from_t1 = interp1d(AGN_T, y1)
 ratio_from_t2 = interp1d(AGN_T, y2)
@@ -116,8 +125,10 @@ for i, label in enumerate(labels):
     #ax.plot(np.log10(AGN_T), interpols[i](AGN_T), '--', c='r', alpha=0.5)
 '''
 
-ax.plot(np.log10(AGN_T), bol_corr_uv, c='k', ls='-', label='UV')
-ax.plot(np.log10(AGN_T), bol_corr_optical, c='k', ls='--', label='optical')
+ax.plot(np.log10(AGN_T), bol_corr_uv, c='k', ls='-', label='UV total')
+ax.plot(np.log10(AGN_T), bol_corr_uv_int, c='k', ls='--', label='UV incident')
+ax.plot(np.log10(AGN_T), bol_corr_optical, c='k', ls='-', label='Optical')
+ax.plot(np.log10(AGN_T), luv_integrate, c='k', ls='dashdot', label='UV integrated')
 
 ax.set_ylabel(r"$\rm F_{\lambda, uv} \; / \; F_{\lambda, bol}$")
 ax.set_xlabel(r"$\rm log_{10}[T_{AGN} \; /\; K]$")
@@ -125,7 +136,7 @@ ax.set_xlabel(r"$\rm log_{10}[T_{AGN} \; /\; K]$")
 
 ax.legend(loc='best', prop={'size': 6})
 
-fig.savefig(f'figures/bolometric_correction.pdf', bbox_inches='tight')
+fig.savefig(f'figures/bolometric_correction_uv_test2.pdf', bbox_inches='tight')
 
 
 print('L_bol-total, AGN')
@@ -138,6 +149,8 @@ print(luvs)
 print(min(lbols), np.median(lbols), max(lbols))
 print(min(linc), np.median(linc), max(linc))
 
+print(min(luv_integrate), np.median(luv_integrate), max(luv_integrate))
+
 bol_corr = {'AGN_T': AGN_T, 'ratio':{'FUV': bol_corr_uv, 'optical': bol_corr_optical}}
 output = {'AGN_T':AGN_T, 'ratios':{'FUV_exact':{'total':y1, 'incident':y2, 'exact_num':y5}, 'FUV_mean':{'total':y3, 'incident':y4, 'exact_num':y6}}}
-pickle.dump(bol_corr, open('bolometric_correction.p', 'wb'))
+#pickle.dump(bol_corr, open('bolometric_correction.p', 'wb'))
