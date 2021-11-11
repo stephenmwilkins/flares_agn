@@ -103,13 +103,13 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
     xi_agn = (ratio_from_t(b[s_t])) * 10 ** q
 
-    x = mstar[s_t]
+    x = lstar[s_t]
 
     y = np.log10(xi_agn)
 
     # -- this will calculate the weighted quantiles of the distribution
     quantiles = [0.84, 0.50, 0.16]  # quantiles for range
-    bins = np.arange(7.5, 12, 0.25)  #  x-coordinate bins
+    bins = np.arange(27, 32, 0.25)  #  x-coordinate bins
     bincen = (bins[:-1] + bins[1:]) / 2.
     out = flares.binned_weighted_quantile(x, y, ws, bins, quantiles)
 
@@ -124,18 +124,20 @@ for i, tag in enumerate(np.flip(fl.tags)):
                                    alpha=0.4)
 
 
-    axes.flatten()[i].set_xlim(7.9, 11.5)
     axes.flatten()[i].set_ylim(17.5, 29.)
 
     axes.flatten()[i].set_xticks([8, 9, 10, 11])
+    axes.flatten()[i].set_xlim(27.9, 31.5)
+
+    axes.flatten()[i].set_xticks([28, 29, 30, 31])
 
     axes.flatten()[i].text(0.1, 0.9, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
                            color=cmap(norm(z)), ha='left')
 
 
 fig.text(0.01, 0.55, r'$\rm log_{10}[\xi_{ion, AGN} \; / \; erg^{-1}\; Hz]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
-fig.text(0.45,0.05, r'$\rm log_{10}[M_{*}\;/\;M_{\odot}]$', ha = 'center', va = 'bottom', fontsize=10)
+fig.text(0.45,0.05, r'$\rm log_{10}[L_{FUV}\;/\;erg\;s^{-1}]$', ha = 'center', va = 'bottom', fontsize=10)
 
-fig.savefig(f'figures/agn_xi_grid.pdf', bbox_inches='tight')
+fig.savefig(f'figures/agn_xi_lstar_grid.pdf', bbox_inches='tight')
 fig.clf()
 

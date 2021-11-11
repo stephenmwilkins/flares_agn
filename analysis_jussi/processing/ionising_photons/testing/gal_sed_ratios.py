@@ -15,10 +15,9 @@ zeds = [10, 9, 8, 7, 6, 5]
 
 
 spec_types = ['Pure_Stellar', 'No_ISM', 'DustModelI', 'Intrinsic']
-spec_types = ['Pure_Stellar']
-
 line_types = [':', '-.', '--', '-']
-#spec_type = spec_types[3]
+
+ratios = ['No_ISM', 'Intrinsic']
 
 flares_dir = '../../../../../data/simulations'
 
@@ -35,19 +34,13 @@ for i, snapshot in enumerate(snapshots):
         fig, axes = plt.subplots(2, 5, figsize=(10, 4), sharex=True, sharey=True)
         fig.subplots_adjust(left=0.07, bottom=0.15, top=1.0, right=0.85, wspace=0.0, hspace=0.0)
 
-        for i, spec_type in enumerate(spec_types):
+        for ii in range(10):
+            axes.flatten()[ii].plot(np.log10(data[halo][snapshot]['lam']), np.log10((data[halo][snapshot]['Pure_Stellar'][ii]/data[halo][snapshot]['Intrinsic'][ii])), c='k', ls='-', alpha=0.8)
+            axes.flatten()[ii].set_ylim(-5, 5)
 
-            for ii in range(10):
-                if spec_type == 'DustModelI':
-                    axes.flatten()[ii].axvline(np.log10(912), c='k', ls='--', alpha=0.4)
-                axes.flatten()[ii].plot(np.log10(data[halo][snapshot]['lam']), np.log10(data[halo][snapshot][spec_type][ii]), c='k', ls=line_types[i], label=spec_type, alpha=0.6)
-                axes.flatten()[ii].set_ylim(-10, 39)
-
-        axes.flatten()[0].legend(loc='upper left', prop={'size': 6})
-
-        fig.text(0.01, 0.55, r'$\rm log_{10}[F_{\nu} \; / \; erg\;s^{-1}\;Hz^{-1}]$', ha='left', va='center',
+        fig.text(0.01, 0.55, r'$\rm log_{10}[F_{\nu}^{Pure\_Stellar} \; / \; F_{\nu}^{Intrinsic}]$', ha='left', va='center',
                  rotation='vertical', fontsize=10)
         fig.text(0.45, 0.05, r'$\rm log_{10}[\lambda\;/\;\AA]$', ha='center', va='bottom', fontsize=10)
 
-        fig.savefig(f'figures/{snapshot}/sims/test/{halo}.pdf', bbox_inches='tight')
+        fig.savefig(f'figures/ratios/{snapshot}/pure_stellar__intrinsic/{halo}.pdf', bbox_inches='tight')
         fig.clf()

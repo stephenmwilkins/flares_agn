@@ -27,7 +27,7 @@ bol_correction = pickle.load(open('xi_corr_test_1.p', 'rb'))
 ratio_from_t = interp1d(bol_correction['T_AGN'], bol_correction['xi'])
 
 
-spec_type = 'Intrinsic' #['DustModelI','Intrinsic','No_ISM','Pure_Stellar']
+spec_type = 'Pure_Stellar' #['DustModelI','Intrinsic','No_ISM','Pure_Stellar']
 
 
 mass_cut = 5.
@@ -60,7 +60,7 @@ MS = fl.load_dataset('Mstar_30', arr_type='Galaxy') # Black hole accretion rate
 LFUV = fl.load_dataset('FUV', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity/Intrinsic/')
 LBOL = fl.load_dataset('Intrinsic', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Indices/Lbol/')
 
-xi_gal = pickle.load(open(flares_dir+'/xi_2.p', 'rb'))
+xi_gal = pickle.load(open(flares_dir+'/xi_new.p', 'rb'))
 
 #LUM = fl.load_dataset('DustModelI', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity')
 
@@ -80,7 +80,7 @@ for i, tag in enumerate(np.flip(fl.tags)):
     z = np.flip(fl.zeds)[i]
     ws, x, y, mstar, lstar, lbol, xi = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
     for ii in range(len(halo)):
-        s = (np.log10(MS[halo[ii]][tag])+10 > 8)
+        s = (np.log10(MS[halo[ii]][tag])+10 > 7)
         ws = np.append(ws, np.ones(np.shape(X[halo[ii]][tag][s]))*weights[ii])
         x = np.append(x, X[halo[ii]][tag][s])
         y = np.append(y, Y[halo[ii]][tag][s])
@@ -117,7 +117,7 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
     # -- this will calculate the weighted quantiles of the distribution
     quantiles = [0.84, 0.50, 0.16]  # quantiles for range
-    bins = np.arange(8, 11, 0.25)  #  x-coordinate bins
+    bins = np.arange(7.5, 12, 0.25)  #  x-coordinate bins
     bincen = (bins[:-1] + bins[1:]) / 2.
     out = flares.binned_weighted_quantile(x, y, ws, bins, quantiles)
 
@@ -132,18 +132,19 @@ for i, tag in enumerate(np.flip(fl.tags)):
                                    alpha=0.4)
 
 
-    axes.flatten()[i].set_xlim(8.1, 11)
+    axes.flatten()[i].set_xlim(7.9, 11.5)
     #axes.flatten()[i].set_ylim(17.5, 29.)
 
-    axes.flatten()[i].set_xticks([8.5, 9, 9.5, 10, 10.5])
+    axes.flatten()[i].set_xticks([8, 9, 10, 11])
+    axes.flatten()[i].set_yticks([24, 25, 26])
 
-    axes.flatten()[i].text(0.1, 0.9, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
+    axes.flatten()[i].text(0.8, 0.9, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
                            color=cmap(norm(z)), ha='left')
 
 
 fig.text(0.01, 0.55, r'$\rm log_{10}[\xi_{ion, Stellar} \; / \; erg^{-1}\; Hz]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
 fig.text(0.45,0.05, r'$\rm log_{10}[M_{*}\;/\;M_{\odot}]$', ha = 'center', va = 'bottom', fontsize=10)
 
-fig.savefig(f'figures/gal_xi_grid_{spec_type}_2.pdf', bbox_inches='tight')
+fig.savefig(f'figures/gal_xi_grid_{spec_type}_new.pdf', bbox_inches='tight')
 fig.clf()
 

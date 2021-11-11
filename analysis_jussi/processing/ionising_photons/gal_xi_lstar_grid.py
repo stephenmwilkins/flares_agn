@@ -27,6 +27,9 @@ bol_correction = pickle.load(open('xi_corr_test_1.p', 'rb'))
 ratio_from_t = interp1d(bol_correction['T_AGN'], bol_correction['xi'])
 
 
+spec_type = 'Pure_Stellar' #['DustModelI','Intrinsic','No_ISM','Pure_Stellar']
+
+
 mass_cut = 5.
 
 def t_bb(m, m_dot):
@@ -57,6 +60,8 @@ MS = fl.load_dataset('Mstar_30', arr_type='Galaxy') # Black hole accretion rate
 LFUV = fl.load_dataset('FUV', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity/Intrinsic/')
 LBOL = fl.load_dataset('Intrinsic', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Indices/Lbol/')
 
+xi_gal = pickle.load(open(flares_dir+'/xi_new.p', 'rb'))
+
 #LUM = fl.load_dataset('DustModelI', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity')
 
 Y = MBH
@@ -73,7 +78,7 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
 
     z = np.flip(fl.zeds)[i]
-    ws, x, y, mstar, lstar, lbol = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
+    ws, x, y, mstar, lstar, lbol, xi = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
     for ii in range(len(halo)):
         s = (np.log10(MS[halo[ii]][tag])+10 > 7)
         ws = np.append(ws, np.ones(np.shape(X[halo[ii]][tag][s]))*weights[ii])
@@ -82,7 +87,8 @@ for i, tag in enumerate(np.flip(fl.tags)):
         mstar = np.append(mstar, np.log10(MS[halo[ii]][tag][s])+10)
         lstar = np.append(lstar, np.log10(LFUV[halo[ii]][tag][s]))
         lbol = np.append(lbol, np.log10(LBOL[halo[ii]][tag][s]))
-
+        xi = np.append(xi, xi_gal[halo[ii]][tag][spec_type][s])
+    '''
     h = 0.6777  # Hubble parameter
 
 
@@ -104,12 +110,14 @@ for i, tag in enumerate(np.flip(fl.tags)):
     xi_agn = (ratio_from_t(b[s_t])) * 10 ** q
 
     x = mstar[s_t]
+    '''
 
-    y = np.log10(xi_agn)
+    x = lstar
+    y = np.log10(xi)
 
     # -- this will calculate the weighted quantiles of the distribution
     quantiles = [0.84, 0.50, 0.16]  # quantiles for range
-    bins = np.arange(7.5, 12, 0.25)  #  x-coordinate bins
+    bins = np.arange(27, 32, 0.25)  #  x-coordinate bins
     bincen = (bins[:-1] + bins[1:]) / 2.
     out = flares.binned_weighted_quantile(x, y, ws, bins, quantiles)
 
@@ -123,19 +131,21 @@ for i, tag in enumerate(np.flip(fl.tags)):
     axes.flatten()[i].fill_between(bincen[Ns], out[:, 0][Ns], out[:, 2][Ns], color=cmap(norm(z)),
                                    alpha=0.4)
 
+    axes.flatten()[i].set_xlim(27.9, 31.5)
 
-    axes.flatten()[i].set_xlim(7.9, 11.5)
-    axes.flatten()[i].set_ylim(17.5, 29.)
+    axes.flatten()[i].set_xticks([28, 29, 30, 31])
 
-    axes.flatten()[i].set_xticks([8, 9, 10, 11])
+    axes.flatten()[i].set_ylim(24, 26.5)
 
-    axes.flatten()[i].text(0.1, 0.9, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
+    axes.flatten()[i].set_yticks([24, 25, 26])
+
+    axes.flatten()[i].text(0.8, 0.9, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
                            color=cmap(norm(z)), ha='left')
 
 
-fig.text(0.01, 0.55, r'$\rm log_{10}[\xi_{ion, AGN} \; / \; erg^{-1}\; Hz]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
-fig.text(0.45,0.05, r'$\rm log_{10}[M_{*}\;/\;M_{\odot}]$', ha = 'center', va = 'bottom', fontsize=10)
+fig.text(0.01, 0.55, r'$\rm log_{10}[\xi_{ion, Stellar} \; / \; erg^{-1}\; Hz]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
+fig.text(0.45,0.05, r'$\rm log_{10}[L_{FUV}\;/\;erg\;s^{-1}]$', ha = 'center', va = 'bottom', fontsize=10)
 
-fig.savefig(f'figures/agn_xi_grid.pdf', bbox_inches='tight')
+fig.savefig(f'figures/gal_xi_lstar_grid_{spec_type}.pdf', bbox_inches='tight')
 fig.clf()
 
