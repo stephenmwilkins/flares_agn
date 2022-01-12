@@ -103,7 +103,7 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
     # -- this will calculate the weighted quantiles of the distribution
     quantiles = [0.84, 0.50, 0.16]  # quantiles for range
-    bins = np.arange(8, 11, 0.1)  #  x-coordinate bins
+    bins = np.arange(8, 12, 0.25)  #  x-coordinate bins
     bincen = (bins[:-1] + bins[1:]) / 2.
     out = flares.binned_weighted_quantile(x, y, ws, bins, quantiles)
 

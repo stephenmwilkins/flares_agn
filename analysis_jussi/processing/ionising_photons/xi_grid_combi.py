@@ -23,12 +23,11 @@ from scipy.interpolate import interp1d
 
 import _pickle as pickle
 
-bol_correction = pickle.load(open('xi_corr_test_1.p', 'rb'))
-ratio_from_t = interp1d(bol_correction['T_AGN'], bol_correction['xi'])
-
+bol_correction = pickle.load(open('bolometric_correction_ion.p', 'rb'))
+ratio_from_t = interp1d(bol_correction['AGN_T'], bol_correction['ratio']['xi'])
+fuv_bolcorr = interp1d(bol_correction['AGN_T'], bol_correction['ratio']['FUV'])
 
 spec_type = 'Pure_Stellar' #['DustModelI','Intrinsic','No_ISM','Pure_Stellar']
-
 
 mass_cut = 5.
 
@@ -46,6 +45,10 @@ def l_agn(m_dot, etta=0.1):
 cmap = mpl.cm.plasma
 norm = mpl.colors.Normalize(vmin=5., vmax=10.)
 
+cmap2 = mpl.cm.cool
+norm2 = mpl.colors.Normalize(vmin=5., vmax=10.)
+
+
 flares_dir = '../../../../data/simulations'
 
 fl = flares.flares(f'{flares_dir}/flares_no_particlesed.hdf5', sim_type='FLARES') #_no_particlesed
@@ -60,9 +63,10 @@ MS = fl.load_dataset('Mstar_30', arr_type='Galaxy') # Black hole accretion rate
 LFUV = fl.load_dataset('FUV', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity/Intrinsic/')
 LBOL = fl.load_dataset('Intrinsic', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Indices/Lbol/')
 
-xi_gal = pickle.load(open(flares_dir+'/xi_new.p', 'rb'))
-
 #LUM = fl.load_dataset('DustModelI', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity')
+
+
+xi_gal = pickle.load(open(flares_dir+'/xi_new.p', 'rb'))
 
 Y = MBH
 X = MDOT
@@ -78,7 +82,7 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
 
     z = np.flip(fl.zeds)[i]
-    ws, x, y, mstar, lstar, lbol, xi = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
+    ws, x, y, mstar, lstar, lbol, xi= np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
     for ii in range(len(halo)):
         s = (np.log10(MS[halo[ii]][tag])+10 > 7)
         ws = np.append(ws, np.ones(np.shape(X[halo[ii]][tag][s]))*weights[ii])
@@ -88,7 +92,7 @@ for i, tag in enumerate(np.flip(fl.tags)):
         lstar = np.append(lstar, np.log10(LFUV[halo[ii]][tag][s]))
         lbol = np.append(lbol, np.log10(LBOL[halo[ii]][tag][s]))
         xi = np.append(xi, xi_gal[halo[ii]][tag][spec_type][s])
-    '''
+
     h = 0.6777  # Hubble parameter
 
 
@@ -107,13 +111,14 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
     ws = ws[s_t]
 
-    xi_agn = (ratio_from_t(b[s_t])) * 10 ** q
+    xi_agn = (ratio_from_t(b[s_t])) #* 10 ** q
+    uv_agn = (fuv_bolcorr(b[s_t]))*10**q
 
     x = mstar[s_t]
-    '''
 
-    x = mstar
-    y = np.log10(xi)
+    xi = np.log10(xi[s_t])
+
+    y = np.log10(xi_agn)
 
     # -- this will calculate the weighted quantiles of the distribution
     quantiles = [0.84, 0.50, 0.16]  # quantiles for range
@@ -121,16 +126,34 @@ for i, tag in enumerate(np.flip(fl.tags)):
     bincen = (bins[:-1] + bins[1:]) / 2.
     out = flares.binned_weighted_quantile(x, y, ws, bins, quantiles)
 
+    out2 = flares.binned_weighted_quantile(x, xi, ws, bins, quantiles)
+
     # --- plot the median and quantiles for bins with >10 galaxies
 
     N, bin_edges = np.histogram(x, bins=bins)
     Ns = N > 10
 
+    '''
+    axes.flatten()[i].plot(bincen, out[:, 1], c='xkcd:darkgreen', ls=':')
+    axes.flatten()[i].plot(bincen[Ns], out[:, 1][Ns], c='xkcd:darkgreen', ls='-')
+    axes.flatten()[i].fill_between(bincen[Ns], out[:, 0][Ns], out[:, 2][Ns], color='xkcd:darkgreen',
+                                   alpha=0.4)
+
+    axes.flatten()[i].plot(bincen, out2[:, 1], c='xkcd:darkgreen', ls=':')
+    axes.flatten()[i].plot(bincen[Ns], out2[:, 1][Ns], c='xkcd:darkgreen', ls='--')
+    axes.flatten()[i].fill_between(bincen[Ns], out2[:, 0][Ns], out2[:, 2][Ns], color='xkcd:darkgreen',
+                                   alpha=0.4)
+
+    '''
     axes.flatten()[i].plot(bincen, out[:, 1], c=cmap(norm(z)), ls=':')
-    axes.flatten()[i].plot(bincen[Ns], out[:, 1][Ns], c=cmap(norm(z)), label=rf'$\rm z={int(z)}$')
+    axes.flatten()[i].plot(bincen[Ns], out[:, 1][Ns], c=cmap(norm(z)), ls='-')
     axes.flatten()[i].fill_between(bincen[Ns], out[:, 0][Ns], out[:, 2][Ns], color=cmap(norm(z)),
                                    alpha=0.4)
 
+    axes.flatten()[i].plot(bincen, out2[:, 1], c=cmap(norm(z)), ls=':')
+    axes.flatten()[i].plot(bincen[Ns], out2[:, 1][Ns], c=cmap(norm(z)), ls='--')
+    axes.flatten()[i].fill_between(bincen[Ns], out2[:, 0][Ns], out2[:, 2][Ns], color=cmap(norm(z)),
+                                   alpha=0.4)
 
     axes.flatten()[i].set_xlim(7.9, 11.5)
     axes.flatten()[i].set_ylim(24, 26.5)
@@ -141,10 +164,13 @@ for i, tag in enumerate(np.flip(fl.tags)):
     axes.flatten()[i].text(0.8, 0.9, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
                            color=cmap(norm(z)), ha='left')
 
+axes.flatten()[i].plot(-99, -99, color='k', ls='-', label='AGN', alpha=0.8)
+axes.flatten()[i].plot(-99, -99, color='k', ls='--', label='Stellar', alpha=0.8)
+axes.flatten()[i].legend(loc='lower right')
 
-fig.text(0.01, 0.55, r'$\rm log_{10}[\xi_{ion, Stellar} \; / \; erg^{-1}\; Hz]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
+fig.text(0.01, 0.55, r'$\rm log_{10}[N_{\gamma_{ion}, AGN} \; / \; N_{\gamma_{ion}, Stars}]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
 fig.text(0.45,0.05, r'$\rm log_{10}[M_{*}\;/\;M_{\odot}]$', ha = 'center', va = 'bottom', fontsize=10)
 
-fig.savefig(f'figures/gal_xi_grid_{spec_type}_new.pdf', bbox_inches='tight')
+fig.savefig(f'figures/xi_grid.pdf', bbox_inches='tight')
 fig.clf()
 

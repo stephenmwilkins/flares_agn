@@ -23,9 +23,11 @@ from scipy.interpolate import interp1d
 
 import _pickle as pickle
 
-bol_correction = pickle.load(open('xi_corr_test_1.p', 'rb'))
-ratio_from_t = interp1d(bol_correction['T_AGN'], bol_correction['xi'])
+#bol_correction = pickle.load(open('xi_corr_test_1.p', 'rb'))
+#ratio_from_t = interp1d(bol_correction['T_AGN'], bol_correction['xi'])
 
+bol_correction = pickle.load(open('bolometric_correction_xi.p', 'rb'))
+ratio_from_t = interp1d(bol_correction['AGN_T'], bol_correction['ratio']['xi'])
 
 mass_cut = 5.
 
@@ -138,6 +140,6 @@ for i, tag in enumerate(np.flip(fl.tags)):
 fig.text(0.01, 0.55, r'$\rm log_{10}[\xi_{ion, AGN} \; / \; erg^{-1}\; Hz]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
 fig.text(0.45,0.05, r'$\rm log_{10}[L_{FUV}\;/\;erg\;s^{-1}]$', ha = 'center', va = 'bottom', fontsize=10)
 
-fig.savefig(f'figures/agn_xi_lstar_grid.pdf', bbox_inches='tight')
+fig.savefig(f'figures/agn_xi_lstar_grid_test.pdf', bbox_inches='tight')
 fig.clf()
 

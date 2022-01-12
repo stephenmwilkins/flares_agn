@@ -49,15 +49,15 @@ for i, tag in enumerate(fl.tags):
 
     ws, x = np.array([]), np.array([])
     for ii in range(len(halo)):
-        s = (np.log10(MS[halo[ii]][tag]) + 10 > 8)
+        s = (np.log10(X[halo[ii]][tag]) + 10 > 5)
         #ws = np.append(ws, np.ones(np.shape(X[halo[ii]][tag]))*weights[ii])
-        x = np.append(x, np.log10(X[halo[ii]][tag][s]))
+        x = np.append(x, np.log10(MS[halo[ii]][tag][s]))
 
 
     x += 10 # units are 1E10 M_sol
 
     binw = 0.25
-    bins = np.arange(5,10,binw)
+    bins = np.arange(7,12,binw)
     b_c = bins[:-1]+binw/2
 
     N, edges = np.histogram(x, bins = bins)
@@ -67,10 +67,10 @@ for i, tag in enumerate(fl.tags):
 
 ax.legend(prop={'size': 6})
 
-ax.set_xlabel(r'$\rm log_{10}[M_{BH}\;/\;M_{\odot}]$')
+ax.set_xlabel(r'$\rm log_{10}[M_{*}\;/\;M_{\odot}]$')
 ax.set_ylabel(r'$\rm log_{10}[N]$')
 
-ax.set_xlim(5.5, 9.5)
-ax.set_ylim(0, 3)
-fig.savefig(f'figures/MBH_hist.pdf', bbox_inches='tight')
+#ax.set_xlim(5.5, 9.5)
+#ax.set_ylim(0, 3)
+fig.savefig(f'figures/MBH_MS_hist.pdf', bbox_inches='tight')
 fig.clf()

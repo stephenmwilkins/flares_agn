@@ -190,9 +190,9 @@ for i, tag in enumerate(np.flip(fl.tags)):
     err_hi = (err_hi)//(np.log(10)*phi)
 
 
-    axes.flatten()[i].plot(bins[:-1] + binw / 2, np.log10(phi_gal), ls='-', c=cmap(norm(z)), alpha=0.3)
-    axes.flatten()[i].plot(bins[:-1] + binw / 2, np.log10(phi), ls='dotted', c=cmap(norm(z)), alpha=0.3)
-    axes.flatten()[i].plot(bins[:-1] + binw / 2, np.log10(phi_intrinsic), ls='dashed', c=cmap(norm(z)), alpha=0.3)
+    axes.flatten()[i].plot(bins[:-1] + binw / 2, np.log10(phi_gal), ls='-', c=cmap(norm(z)), alpha=0.5)
+    axes.flatten()[i].plot(bins[:-1] + binw / 2, np.log10(phi), ls='dotted', c=cmap(norm(z)), alpha=0.5)
+    axes.flatten()[i].plot(bins[:-1] + binw / 2, np.log10(phi_intrinsic), ls='dashed', c=cmap(norm(z)), alpha=0.5)
 
 
     axes.flatten()[i].plot(bins[:-1][Ns_gal] + binw / 2, np.log10(phi_gal[Ns_gal]), ls='-', c=cmap(norm(z)))
@@ -221,8 +221,8 @@ for i, tag in enumerate(np.flip(fl.tags)):
     #ax.set_ylabel(r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\, dex^{-1}]$')
 
 axes.flatten()[0].plot(-99, -99, ls='-', c='k', alpha=0.6, label=rf'Stellar')
-axes.flatten()[0].plot(-99, -99, ls='dashed', c='k', alpha=0.6, label=rf'AGN_{{intrinsic}}')
-axes.flatten()[0].plot(-99, -99, ls='dotted', c='k', alpha=0.6, label = rf'AGN_{{dust}}')
+axes.flatten()[0].plot(-99, -99, ls='dashed', c='k', alpha=0.6, label=rf'$\rm AGN_{{intrinsic}}$')
+axes.flatten()[0].plot(-99, -99, ls='dotted', c='k', alpha=0.6, label = rf'$\rm AGN_{{dust}}$')
 
 axes.flatten()[0].legend(loc='lower left', prop={'size': 6})
 

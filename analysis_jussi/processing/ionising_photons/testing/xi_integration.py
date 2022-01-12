@@ -9,7 +9,7 @@ def xi_ion(lam, sed, lims=[0, 912]):
     :return: ionising photon production efficiency
     """
     s = ((lam >= 0) & (lam < 912)).nonzero()[0]
-    conv = 1.98644586e-08/lam[s]
+    conv = 1.98644586e-08/(lam[s]**2*1E10)
     #conv = ((constants.h * constants.c / ((lam[s] * units.AA).to(units.m))).to(units.erg)).value  # alternative using astropy.units and astropy.constants
 
     xi = simps(sed[s]/conv, lam[s])/np.interp(1500, lam, sed)

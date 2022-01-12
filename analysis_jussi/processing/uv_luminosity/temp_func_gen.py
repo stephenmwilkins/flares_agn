@@ -20,10 +20,42 @@ from scipy.interpolate import interp1d
 
 import _pickle as pickle
 
-spectrum_index = 0
+
+def xi_ion(lam, sed, lims=[0, 912]):
+    """
+    :param lam: wavelength array in Å
+    :param sed: SED as F_nu/(erg/s/Hz)
+    :param lims: limits of integration in Å
+    :return: ionising photon production efficiency
+    """
+    s = ((lam >= 0) & (lam < 912)).nonzero()[0]
+    conv = 1.98644586e-08/(lam[s]**2*1E10)
+    #conv = ((constants.h * constants.c / ((lam[s] * units.AA).to(units.m))).to(units.erg)).value  # alternative using astropy.units and astropy.constants
+
+    xi = simps(sed[s]/conv, lam[s])/np.interp(1500, lam, sed)
+
+    return xi
+
+def lum_ion(lam, sed, lims=[0, 912]):
+    """
+    :param lam: wavelength array in Å
+    :param sed: SED as F_nu/(erg/s/Hz)
+    :param lims: limits of integration in Å
+    :return: ionising photon production efficiency
+    """
+    s = ((lam >= lims[0]) & (lam < lims[1])).nonzero()[0]
+    conv = (lam[s])
+    #conv = ((constants.h * constants.c / ((lam[s] * units.AA).to(units.m))).to(units.erg)).value  # alternative using astropy.units and astropy.constants
+
+    xi = simps(sed[s]/conv, lam[s])
+
+    return xi
+
+
+spectrum_index = 2
 
 FUV = 1500
-spectrum_parts = {'uv':[1400, 1600], 'optical':[4000, 8000]}
+spectrum_parts = {'uv':[1400, 1600], 'optical':[4000, 8000], 'ion':[0, 912]}
 spectrum_part = list(spectrum_parts.keys())[spectrum_index]
 lims = spectrum_parts[spectrum_part]
 
@@ -59,6 +91,9 @@ ax = fig.add_axes((left, bottom, width, height))
 bol_corr_optical = np.array([])
 bol_corr_uv = np.array([])
 bol_corr_uv_int = np.array([])
+bol_corr_xi = np.array([])
+bol_corr_ion = np.array([])
+bol_corr_xi_nobolscale = np.array([])
 
 for i in range(len(AGN_T)):
     lam_bol, incident_bol, transmitted_bol, nebular_bol, total_bol, linecont_bol = np.loadtxt(f'{output_dir_bol}/{i+1}.cont', delimiter='\t',
@@ -74,8 +109,13 @@ for i in range(len(AGN_T)):
 
     s = (lam_bol > lims[0])&(lam_bol<lims[1])
 
+    sss = (lam_nu > 0)&(lam_nu<1E10)#(lam_nu > lims[0])&(lam_nu<lims[1])
+
     total_bol = total_bol/lam_bol
     incident_bol = incident_bol/lam_bol
+
+    #print(min(int_nu))
+    #print(simps(np.flip(incident_bol), np.flip(lam_bol)), simps(int_nu[sss]/lam_nu[sss], lam_nu[sss]), lum_ion(lam_nu, int_nu), np.sum((incident_bol[1:]+incident_bol[:-1])/(lam_bol[1:]+lam_bol[:-1])*lam_bol[:-1]-lam_bol[1:]))
 
     lbols = np.append(lbols, simps(np.flip(total_bol), np.flip(lam_bol)))
     luvs = np.append(luvs, simps(np.flip(total_bol[s]), np.flip(lam_bol[s])))
@@ -99,6 +139,10 @@ for i in range(len(AGN_T)):
     bol_corr_uv = np.append(bol_corr_uv, (np.interp(1500., lam_nu, tot_nu) / 1E43))
     bol_corr_uv_int = np.append(bol_corr_uv_int, (np.interp(1500., lam_nu, int_nu) / 1E43))
     bol_corr_optical = np.append(bol_corr_optical, (np.interp(5500., lam_nu, tot_nu) / 1E43))
+    bol_corr_xi = np.append(bol_corr_xi, xi_ion(lam_nu, int_nu) / 1E43)
+    bol_corr_ion = np.append(bol_corr_ion, lum_ion(lam_nu, int_nu) / 1E43)
+    bol_corr_xi_nobolscale = np.append(bol_corr_xi_nobolscale, xi_ion(lam_nu, int_nu))
+
 
     luv_integrate = np.append(luv_integrate, np.sum(tot_nu[s]/(lam_nu[s]))/1E43)
     #luv_integrate = np.append(luv_integrate, np.sum(tot_nu[s] * 3E8 / (lam_nu[s] * 1E-10) ** 2) * 1E-10 / 1E43)
@@ -106,7 +150,7 @@ for i in range(len(AGN_T)):
     #print(f'Exact: lamda={lam_bol[lam_fuv_idx]}, L_FUV={total_bol[lam_fuv_idx]}')
     #print(f'Mean: lamda=({lam_bol[(np.abs(lam_bol - lims[0])).argmin()]},{lam_bol[(np.abs(lam_bol - lims[1])).argmin()]}], L_FUV={np.mean(total_bol[s])}')
 
-    print(np.sum(int_nu/(lam_nu)))
+    #print(np.sum(int_nu/(lam_nu)))
 
 ratio_from_t1 = interp1d(AGN_T, y1)
 ratio_from_t2 = interp1d(AGN_T, y2)
@@ -151,6 +195,6 @@ print(min(linc), np.median(linc), max(linc))
 
 print(min(luv_integrate), np.median(luv_integrate), max(luv_integrate))
 
-bol_corr = {'AGN_T': AGN_T, 'ratio':{'FUV': bol_corr_uv, 'optical': bol_corr_optical}}
+bol_corr = {'AGN_T': AGN_T, 'ratio':{'FUV': bol_corr_uv, 'optical': bol_corr_optical, 'xi_per_Lbol':bol_corr_xi, 'ionising':bol_corr_ion, 'xi':bol_corr_xi_nobolscale}}
 output = {'AGN_T':AGN_T, 'ratios':{'FUV_exact':{'total':y1, 'incident':y2, 'exact_num':y5}, 'FUV_mean':{'total':y3, 'incident':y4, 'exact_num':y6}}}
-#pickle.dump(bol_corr, open('bolometric_correction.p', 'wb'))
+pickle.dump(bol_corr, open('bolometric_correction_ion.p', 'wb'))

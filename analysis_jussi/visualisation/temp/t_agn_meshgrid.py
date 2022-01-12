@@ -94,7 +94,7 @@ C = np.log10(t_bb(10**X, 10**Y))
 
 ax.pcolormesh(X, Y, C, cmap=cmap, norm=norm)
 
-z_in = 10
+z_in = 5
 
 ztag = z_in - 5
 
@@ -141,8 +141,8 @@ for tag in [np.flip(fl.tags)[ztag]]:
     ax.scatter(np.log10(y[s_t]), np.log10(x[s_t]), c='k', s=2, alpha=0.5)
 
 
-ax.text(0.8, 0.2, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=ax.transAxes,
-                           color='k', ha='right')
+ax.text(0.07, 0.87, r'$\rm z={0:.0f}$'.format(z), fontsize=12, transform=ax.transAxes,
+                           color='w', ha='left')
 
 
 cmapper = cm.ScalarMappable(norm=norm, cmap=cmap)
@@ -159,4 +159,4 @@ ax.set_ylim(-10, 1)
 ax.set_ylabel(r"$\rm log_{10}[\dot{M}_{BH} \; / \; M_{\odot} \;yr^{-1}]$")
 ax.set_xlabel(r"$\rm log_{10}[M_{BH} \; / \; M_{\odot}]$")
 
-fig.savefig(f'figures/t_bb_{z}.pdf', bbox_inches='tight')
+fig.savefig(f'figures/t_bb_{z}_horrible_label_version.pdf', bbox_inches='tight')

@@ -23,8 +23,8 @@ from scipy.interpolate import interp1d
 
 import _pickle as pickle
 
-bol_correction = pickle.load(open('xi_corr_test_1.p', 'rb'))
-ratio_from_t = interp1d(bol_correction['T_AGN'], bol_correction['xi'])
+bol_correction = pickle.load(open('bolometric_correction_ion.p', 'rb'))
+ratio_from_t = interp1d(bol_correction['AGN_T'], bol_correction['ratio']['xi'])
 
 
 mass_cut = 5.
@@ -101,7 +101,7 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
     ws = ws[s_t]
 
-    xi_agn = (ratio_from_t(b[s_t])) * 10 ** q
+    xi_agn = (ratio_from_t(b[s_t])) #* 10 ** q
 
     x = mstar[s_t]
 
@@ -125,9 +125,10 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
 
     axes.flatten()[i].set_xlim(7.9, 11.5)
-    axes.flatten()[i].set_ylim(17.5, 29.)
+    axes.flatten()[i].set_ylim(24, 26.5)
 
     axes.flatten()[i].set_xticks([8, 9, 10, 11])
+    axes.flatten()[i].set_yticks([24, 25, 26])
 
     axes.flatten()[i].text(0.1, 0.9, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
                            color=cmap(norm(z)), ha='left')

@@ -80,7 +80,7 @@ for i, tag in enumerate(np.flip(fl.tags)):
     z = np.flip(fl.zeds)[i]
     ws, x, y, mstar, lstar, lbol, xi = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
     for ii in range(len(halo)):
-        s = (np.log10(MS[halo[ii]][tag])+10 > 7)
+        s = (np.log10(MS[halo[ii]][tag])+10 > 8)
         ws = np.append(ws, np.ones(np.shape(X[halo[ii]][tag][s]))*weights[ii])
         x = np.append(x, X[halo[ii]][tag][s])
         y = np.append(y, Y[halo[ii]][tag][s])
@@ -146,6 +146,6 @@ for i, tag in enumerate(np.flip(fl.tags)):
 fig.text(0.01, 0.55, r'$\rm log_{10}[\xi_{ion, Stellar} \; / \; erg^{-1}\; Hz]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
 fig.text(0.45,0.05, r'$\rm log_{10}[L_{FUV}\;/\;erg\;s^{-1}]$', ha = 'center', va = 'bottom', fontsize=10)
 
-fig.savefig(f'figures/gal_xi_lstar_grid_{spec_type}.pdf', bbox_inches='tight')
+fig.savefig(f'figures/gal_xi_lstar_grid_{spec_type}_masscut8.pdf', bbox_inches='tight')
 fig.clf()
 
