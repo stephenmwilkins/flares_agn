@@ -8,8 +8,6 @@ import matplotlib.pyplot as plt
 import astropy.constants as const
 import astropy.units as u
 
-from uncertainties import unumpy
-
 import flares
 
 import FLARE.photom as photom
@@ -40,10 +38,6 @@ onoue = {'label': 'Onoue+2019'}
 onoue['lum'] = np.array([8.96*10**45, 1.03*10**45, 6.77*10**45, 4.44*10**45, 4.38*10**45, 2.66*10**45])
 onoue['mass'] = np.array([22.*10**8, 0.38*10**8, 6.3*10**8, 11*10**8, 7.1*10**8, 7.0*10**8])
 onoue['edd_rate'] = np.array([0.16, 1.1, 0.43, 0.17, 0.24, 0.24])
-onoue['err_edd_u'] = np.array([0.04, 0.5, 0.08, 0.04, 0.18, 0.06])
-onoue['err_edd_l'] = np.array([0.02, 0.3, 0.05, 0.05, 0.08, 0.01])
-onoue['err_mass_u'] = np.array([2*10**8, 0.1*10**8, 0.8*10**8, 3*10**8, 2.4*10**8, 1.4*10**8])
-onoue['err_mass_l'] = np.array([6*10**8, 0.18*10**8, 1.2*10**8, 2*10**8, 5.2*10**8, 2.3*10**8])
 
 
 
@@ -140,17 +134,17 @@ for i, tag in enumerate(np.flip(fl.tags)):
     ax.fill_between(bincen[Ns], out[:, 0][Ns], out[:, 2][Ns], color=cmap(norm(z)), alpha=0.2)
 
     '''
-    bins = np.arange(5, 10, 0.5)  #  x-coordinate bins, in this case stellar mass
-    bincen = (bins[:-1] + bins[1:]) / 2.
 
-    N_flares, binedges = np.histogram(y, bins=bins)
-    N_eagle, binedges =  np.histogram(eagle_mbh, bins=bins)
 
     l_edd_agn = np.array([l_agn(maccr, etta=0.1, etta_r=0) for maccr in np.log10(M_edd(10**m_bh))])
     l_agn_eagle = np.array([l_agn(maccr, etta=0.1, etta_r=0) for maccr in np.log10(eagle_maccr)])
     l_agn_onoue = onoue['edd_rate']*np.array([10**l_agn(maccr, etta=0.1, etta_r=0) for maccr in np.log10(M_edd(onoue['mass']))])
 
-    print(np.log10(l_agn_onoue))
+    bins = np.arange(44, 47, 0.25)  #  x-coordinate bins, in this case stellar mass
+    bincen = (bins[:-1] + bins[1:]) / 2.
+
+    N_flares, binedges = np.histogram(x, bins=bins)
+    N_eagle, binedges =  np.histogram(l_agn_eagle, bins=bins)
 
     print(f'FLARES z = {z}, N_BH = {sum(N_flares)}')
     print(f'EAGLE  z = {z}, N_BH = {sum(N_eagle)}')
@@ -162,80 +156,33 @@ for i, tag in enumerate(np.flip(fl.tags)):
     print('EAGLE:')
     print(N_eagle)
 
-    def log10err(err, val):
-        return err/(np.log(10)*val)
+    axes.flatten()[i].step(bincen, N_flares, c='k', where='mid')
+    axes.flatten()[i].step(bincen, N_eagle, where='mid', c='teal', alpha=0.7)
 
+    #axes.flatten()[i].plot(m_bh, l_edd_agn, 'k--', alpha=0.5, zorder=0)
+    #axes.flatten()[i].scatter(y, x, c=cmap(norm(z)), alpha=0.7, s=4, zorder=5)
+    #axes.flatten()[i].scatter(eagle_mbh, l_agn_eagle, c='teal', marker='D', alpha=1, s=4, zorder=10)
+    #axes.flatten()[i].scatter(np.log10(onoue['mass']), np.log10(l_agn_onoue), c='teal', marker='*', alpha=1, s=4, zorder=15)
 
-    def calc(BH_Mass, f_Edd):
+    axes.flatten()[i].text(0.8, 0.8, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes, color=cmap(norm(z)))
 
-        L_Edd = (1.3e46) * (BH_Mass / 1e8)  # in erg/s
-        L_BH = f_Edd * L_Edd
-
-        return unumpy.log10(L_BH)
-
-    axes.flatten()[i].plot(m_bh, l_edd_agn, 'k--', alpha=0.5, zorder=0)
-    axes.flatten()[i].scatter(y, x, c=cmap(norm(z)), alpha=0.7, s=4, zorder=5)
-    axes.flatten()[i].scatter(eagle_mbh, l_agn_eagle, c='teal', marker='D', alpha=1, s=4, zorder=10)
-    axes.flatten()[i].scatter(np.log10(onoue['mass']), np.log10(l_agn_onoue), c='firebrick', marker='*', alpha=1, s=10, zorder=15)
-
-    '''
-    for j in range(len(onoue['mass'])):
-        l_ =  10 ** l_agn(np.log10(M_edd(onoue['mass'][j])), etta=0.1, etta_r=0)
-
-        l_plot = np.log10(onoue['edd_rate'][j] * l_)
-        m_plot = np.log10(onoue['mass'][j])
-
-        BH_mass = unumpy.uarray([onoue['mass'][j], onoue['mass'][j]], [onoue['err_mass_u'][j], onoue['err_mass_l'][j]])
-
-        #mass_u = m_plot + log10err(onoue['err_mass_u'][j], onoue['mass'][j])
-        #mass_l = m_plot - log10err(onoue['err_mass_l'][j], onoue['mass'][j])
-        #lum_u = l_plot + log10err(onoue['err_edd_u'][j]*l_, onoue['edd_rate'][j] * l_)
-        #lum_l = l_plot - log10err(onoue['err_edd_l'][j] * l_, onoue['edd_rate'][j] * l_)
-
-        #lum_u = np.log10(l_*(onoue['edd_rate'][j]+onoue['err_edd_u'][j]))
-        #lum_l = np.log10(l_*(onoue['edd_rate'][j]-onoue['err_edd_u'][j]))
-
-        #A = (1.3e46)/1e8
-        #err_edd_u = A*np.sqrt((onoue['mass'][j]*onoue['err_edd_u'][j])**2+(onoue['err_mass_u'][j]*onoue['edd_rate'][j])**2)
-        #err_edd_l = A*np.sqrt((onoue['mass'][j]*onoue['err_edd_l'][j])**2+(onoue['err_mass_l'][j]*onoue['edd_rate'][j])**2)
-        #lum_u = log10err(err_edd_u, 10**l_)
-        #lum_l = log10err(err_edd_l, 10 ** l_)
-
-
-
-        #mass_u = np.log10(onoue['mass'][j]+onoue['err_mass_u'][j])+0.5
-        #mass_l = np.log10(onoue['mass'][j]-onoue['err_mass_l'][j])-0.5
-
-        mass_u = np.log10(onoue['mass'][j])+0.5
-        mass_l = np.log10(onoue['mass'][j])-0.5
-
-        print(lum_l, l_plot, lum_u)
-        print(mass_l, m_plot, mass_u)
-
-        axes.flatten()[i].plot([mass_l, mass_u], 2 * [l_plot], c='firebrick', linewidth=0.5, alpha=1, zorder=16)
-        axes.flatten()[i].plot(2 * [m_plot], [lum_l, lum_u], c='firebrick', linewidth=0.5, alpha=1, zorder=17)
-    '''
-
-
-    axes.flatten()[i].text(0.2, 0.8, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes, color=cmap(norm(z)))
-
-    axes.flatten()[i].set_xticks([6, 7, 8, 9])
-    axes.flatten()[i].set_yticks([45,46,47])
-    axes.flatten()[i].set_xlim(5.9,9.5)
-    axes.flatten()[i].set_ylim(44.5, 47.1)
+    #axes.flatten()[i].set_xticks([6, 7, 8, 9])
+    axes.flatten()[i].set_xticks([45,46,47])
+    axes.flatten()[i].set_xlim(44, 47)
+    axes.flatten()[i].set_ylim(0)
     #ax.legend(prop={'size': 6})
 
     # --- scatter plot
 
     #ax.scatter(x,y,s=3,c='k',alpha=0.1)
 
-axes.flatten()[i].scatter(-99, -99, c='firebrick', marker='*', alpha=1, s=7, label=onoue['label'])
-axes.flatten()[i].scatter(-99, -99, c='k', alpha=0.7, s=4, label='FLARES')
-axes.flatten()[i].scatter(-99, -99, c='teal', marker='D', alpha=1, s=4, label='EAGLE REF')
+#axes.flatten()[i].scatter(-99, -99, c='teal', marker='*', alpha=1, s=4, label=onoue['label'])
+axes.flatten()[i].step(-99, -99, c='k', alpha=1, label='FLARES')
+axes.flatten()[i].step(-99, -99, c='teal', alpha=0.8, label='EAGLE REF')
 axes.flatten()[i].legend(loc='lower right', prop={'size': 6})
 
-fig.text(0.45, 0.05, r'$\rm log_{10}[M_{BH}\;/\;M_{\odot}]$', ha = 'center', va = 'bottom', fontsize=10)
-fig.text(0.01,0.55, r'$\rm log_{10}[L_{AGN}\;/\;erg\,s^{-1}]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
+fig.text(0.45, 0.05, r'$\rm log_{10}[L_{AGN}\;/\;erg\,s^{-1}]$', ha = 'center', va = 'bottom', fontsize=10)
+fig.text(0.01,0.55, r'$\rm N_{AGN}$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
 
-fig.savefig(f'figures/l_agn/M_BH_zeds_L_AGN_oldmaster_onouecomparison.pdf', bbox_inches='tight')
+fig.savefig(f'figures/l_agn/L_AGN_hist.pdf', bbox_inches='tight')
 fig.clf()

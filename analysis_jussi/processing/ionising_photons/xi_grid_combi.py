@@ -59,7 +59,7 @@ tags = fl.tags
 
 MBH = fl.load_dataset('BH_Mass', arr_type='Galaxy') # Black hole mass of galaxy
 MDOT = fl.load_dataset('BH_Mdot', arr_type='Galaxy') # Black hole accretion rate
-MS = fl.load_dataset('Mstar_30', arr_type='Galaxy') # Black hole accretion rate
+MS = fl.load_dataset('Mstar', arr_type='Galaxy') # Black hole accretion rate
 LFUV = fl.load_dataset('FUV', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity/Intrinsic/')
 LBOL = fl.load_dataset('Intrinsic', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Indices/Lbol/')
 
@@ -122,7 +122,7 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
     # -- this will calculate the weighted quantiles of the distribution
     quantiles = [0.84, 0.50, 0.16]  # quantiles for range
-    bins = np.arange(7.5, 12, 0.25)  #  x-coordinate bins
+    bins = np.arange(7.5, 12, 0.4)  #  x-coordinate bins
     bincen = (bins[:-1] + bins[1:]) / 2.
     out = flares.binned_weighted_quantile(x, y, ws, bins, quantiles)
 
@@ -168,9 +168,9 @@ axes.flatten()[i].plot(-99, -99, color='k', ls='-', label='AGN', alpha=0.8)
 axes.flatten()[i].plot(-99, -99, color='k', ls='--', label='Stellar', alpha=0.8)
 axes.flatten()[i].legend(loc='lower right')
 
-fig.text(0.01, 0.55, r'$\rm log_{10}[N_{\gamma_{ion}, AGN} \; / \; N_{\gamma_{ion}, Stars}]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
+fig.text(0.01, 0.55, r'$\rm log_{10}[\xi_{ion, AGN} \; / \; erg^{-1}\; Hz]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
 fig.text(0.45,0.05, r'$\rm log_{10}[M_{*}\;/\;M_{\odot}]$', ha = 'center', va = 'bottom', fontsize=10)
 
-fig.savefig(f'figures/xi_grid.pdf', bbox_inches='tight')
+fig.savefig(f'figures/xi_grid_newmaster.pdf', bbox_inches='tight')
 fig.clf()
 

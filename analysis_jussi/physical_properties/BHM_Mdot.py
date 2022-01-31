@@ -19,7 +19,7 @@ norm = mpl.colors.Normalize(vmin=5., vmax=10.)
 
 flares_dir = '../../../data/simulations'
 
-fl = flares.flares(f'{flares_dir}/flares.hdf5', sim_type='FLARES')
+fl = flares.flares(f'{flares_dir}/flares_no_particlesed_old.hdf5', sim_type='FLARES')
 df = pd.read_csv(f'{flares_dir}/weights_grid.txt')
 
 halo = fl.halos

@@ -42,7 +42,6 @@ def l_agn(m_dot, etta=0.1):
     l = (etta*m_dot*c**2).to(u.erg/u.s)
     return np.log10(l.value) # output in log10(erg/s)
 
-
 cmap = mpl.cm.plasma
 norm = mpl.colors.Normalize(vmin=5., vmax=10.)
 
@@ -58,7 +57,7 @@ tags = fl.tags
 
 MBH = fl.load_dataset('BH_Mass', arr_type='Galaxy') # Black hole mass of galaxy
 MDOT = fl.load_dataset('BH_Mdot', arr_type='Galaxy') # Black hole accretion rate
-MS = fl.load_dataset('Mstar_30', arr_type='Galaxy') # Black hole accretion rate
+MS = fl.load_dataset('Mstar_30', arr_type='Galaxy/Mstar_aperture') # Black hole accretion rate
 LFUV = fl.load_dataset('FUV', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity/Intrinsic/')
 LBOL = fl.load_dataset('Intrinsic', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Indices/Lbol/')
 
@@ -93,18 +92,20 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
 
     # converting MBHacc units to M_sol/yr
-    x *= h * 6.445909132449984E23  # g/s
-    x = x/constants.M_sun.to('g').value  # convert to M_sol/s
-    x *= units.yr.to('s')  # convert to M_sol/yr
+    #x *= h * 6.445909132449984E23  # g/s
+    #x = x/constants.M_sun.to('g').value  # convert to M_sol/s
+    #x *= units.yr.to('s')  # convert to M_sol/yr
 
 
     y *= 10**10
+    print(f'Max BH mass: z = {z}, max(M_BH) = {max(y/10**9):.4f}E9')
     b = t_bb(y, x)
 
     s_t = np.array(b) > 10**4
 
     q = np.array([l_agn(g, etta=0.1) for g in x[s_t]])
 
+    print(f'Max BH lum: z = {z}, max(M_BH) = {max(10**q)}')
     ws = ws[s_t]
 
     xi_agn = (ratio_from_t(b[s_t])) * 10 ** q
@@ -143,10 +144,9 @@ for i, tag in enumerate(np.flip(fl.tags)):
     axes.flatten()[i].text(0.1, 0.9, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
                            color=cmap(norm(z)), ha='left')
 
-
-fig.text(0.01, 0.55, r'$\rm log_{10}[\xi_{ion, AGN} \; / \; erg^{-1}\; Hz]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
+fig.text(0.01, 0.55, r'$\rm log_{10}[N_{\gamma_{ion}, AGN} \; / \; N_{\gamma_{ion}, Stars}]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
 fig.text(0.45,0.05, r'$\rm log_{10}[M_{*}\;/\;M_{\odot}]$', ha = 'center', va = 'bottom', fontsize=10)
 
-fig.savefig(f'figures/xi_ratio_grid_mstar.pdf', bbox_inches='tight')
+fig.savefig(f'figures/xi_ratio_grid_mstar_newmaster.pdf', bbox_inches='tight')
 fig.clf()
 

@@ -76,7 +76,7 @@ for ii, tag in enumerate(tags):
 
     # -- this will calculate the weighted quantiles of the distribution
     quantiles = [0.84, 0.50, 0.16]  # quantiles for range
-    bins = np.arange(7, 12, 0.25)  #  x-coordinate bins
+    bins = np.arange(7, 12, 0.5)  #  x-coordinate bins
     bincen = (bins[:-1] + bins[1:]) / 2.
     out1 = flares.binned_weighted_quantile(x1, y1, weights=np.ones(len(x1)), bins=bins, quantiles=quantiles)
     out2 = flares.binned_weighted_quantile(x2, y2, weights=np.ones(len(x2)), bins=bins, quantiles=quantiles)
@@ -112,5 +112,5 @@ fig.text(0.01, 0.55, r'$\rm log_{10}[sSFR_{no-AGN} \; / \; sSFR_{AGN}]$', ha='le
          rotation='vertical', fontsize=10)
 fig.text(0.45, 0.05, r'$\rm log_{10}[M_{*}\;/\;M_{\odot}]$', ha='center', va='bottom', fontsize=10)
 
-fig.savefig(f'figures/sSFR_Mstar_ratio.pdf', bbox_inches='tight')
+fig.savefig(f'figures/sSFR_Mstar_ratio_coarse.pdf', bbox_inches='tight')
 fig.clf()
