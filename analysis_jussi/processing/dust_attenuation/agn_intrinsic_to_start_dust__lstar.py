@@ -66,7 +66,7 @@ MDOT = fl.load_dataset('BH_Mdot', arr_type='Galaxy') # Black hole accretion rate
 MS = fl.load_dataset('Mstar', arr_type='Galaxy') # Black hole accretion rate
 LFUV = fl.load_dataset('FUV', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity/DustModelI/')
 LBOL = fl.load_dataset('DustModelI', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Indices/Lbol/')
-BHLOS = pickle.load(open(flares_dir+'/bh_los.p', 'rb'))
+BHLOS = pickle.load(open(flares_dir+'/bh_los.p', 'rb')) #fl.load_dataset('BH_los', arr_type='Galaxy')
 DTM = fl.load_dataset('DTM', arr_type='Galaxy')
 
 #LUM = fl.load_dataset('DustModelI', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity')
@@ -101,7 +101,9 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
 
     # converting MBHacc units to M_sol/yr
-    x *= h
+    x *= h #* 6.445909132449984E23  # g/s
+    #x = x/constants.M_sun.to('g').value  # convert to M_sol/s
+    #x *= units.yr.to('s')  # convert to M_sol/yr
 
 
     y *= 10**10
@@ -121,13 +123,16 @@ for i, tag in enumerate(np.flip(fl.tags)):
     y = (ratio_from_t(b[s_t]))*10**q
     #y = (1/4.4) * 10 ** q
 
-    y = np.log10(y /  ((const.c/(1500*u.AA).to(u.m)).to(u.Hz)).value)
+    y_int = np.log10(y /  ((const.c/(1500*u.AA).to(u.m)).to(u.Hz)).value)
 
-    y = attn(y, los[s_t], dtm[s_t])
+    y_dust = attn(y, los[s_t], dtm[s_t])
 
     x = lstar[s_t]
+    print(min(x), max(x))
+    print(min(y_int), max(y_int))
 
-    y = np.log10(10**y / 10 ** lstar[s_t])
+
+    y = np.log10(10**y_int / 10 ** lstar[s_t])
 
     # -- this will calculate the weighted quantiles of the distribution
     quantiles = [0.84, 0.50, 0.16]  # quantiles for range
@@ -163,10 +168,10 @@ for i, tag in enumerate(np.flip(fl.tags)):
     # ax.set_xlabel(r'$\rm log_{10}[L_{FUV}\;/\;erg\,s^{-1}\,Hz^{-1}]$')
     # ax.set_ylabel(r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\, dex^{-1}]$')
 
-fig.text(0.01, 0.55, r'$\rm log_{10}[L_{AGN, FUV} \; / \; L_{stellar, FUV}]$', ha='left', va='center',
+fig.text(0.01, 0.55, r'$\rm log_{10}[L_{AGN, FUV, intrinsic} \; / \; L_{stellar, FUV, dust}]$', ha='left', va='center',
          rotation='vertical', fontsize=10)
 fig.text(0.45, 0.05, r'$\rm log_{10}[L_{stellar, FUV}\;/\;erg\,s^{-1}\,Hz^{-1}]$', ha='center', va='bottom',
          fontsize=10)
 
-fig.savefig(f'figures/agn_fuv_dust_frac_grid_lstar_coarse_test.pdf', bbox_inches='tight')
+fig.savefig(f'figures/agn_intrinsic_stellar_dust_frac_grid_lstar_coarse.pdf', bbox_inches='tight')
 fig.clf()

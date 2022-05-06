@@ -66,7 +66,7 @@ MDOT = fl.load_dataset('BH_Mdot', arr_type='Galaxy') # Black hole accretion rate
 MS = fl.load_dataset('Mstar', arr_type='Galaxy') # Black hole accretion rate
 LFUV = fl.load_dataset('FUV', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity/DustModelI/')
 LBOL = fl.load_dataset('DustModelI', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Indices/Lbol/')
-BHLOS = pickle.load(open(flares_dir+'/bh_los.p', 'rb'))
+BHLOS = pickle.load(open(flares_dir+'/bh_los.p', 'rb')) #fl.load_dataset('BH_los', arr_type='Galaxy')
 DTM = fl.load_dataset('DTM', arr_type='Galaxy')
 
 #LUM = fl.load_dataset('DustModelI', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity')
@@ -101,7 +101,9 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
 
     # converting MBHacc units to M_sol/yr
-    x *= h
+    x *= h #* 6.445909132449984E23  # g/s
+    #x = x/constants.M_sun.to('g').value  # convert to M_sol/s
+    #x *= units.yr.to('s')  # convert to M_sol/yr
 
 
     y *= 10**10
@@ -115,25 +117,33 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
     q = np.array([l_agn(g, etta=0.1) for g in x[s_t]])
 
-    x = np.array(mstar)[s_t]
+
 
 
     y = (ratio_from_t(b[s_t]))*10**q
     #y = (1/4.4) * 10 ** q
 
-    y = np.log10(y /  ((const.c/(1500*u.AA).to(u.m)).to(u.Hz)).value)
+    y_int = np.log10(y /  ((const.c/(1500*u.AA).to(u.m)).to(u.Hz)).value)
 
-    y = attn(y, los[s_t], dtm[s_t])
+    y_dust = attn(y_int, los[s_t], dtm[s_t])
 
     x = lstar[s_t]
+    print(min(x), max(x))
+    print(min(y_int), max(y_int))
+    print(min(y_dust), max(y_dust))
 
-    y = np.log10(10**y / 10 ** lstar[s_t])
+    x = np.array(mstar)[s_t]
+
+    y = np.log10(10**y_int / 10 ** lstar[s_t])
+
+    yy = np.log10(10**y_dust / 10 ** lstar[s_t])
 
     # -- this will calculate the weighted quantiles of the distribution
     quantiles = [0.84, 0.50, 0.16]  # quantiles for range
-    bins = np.arange(28, 31, 0.2)  #  x-coordinate bins
+    bins = np.arange(8, 11, 0.2)   #  x-coordinate bins
     bincen = (bins[:-1] + bins[1:]) / 2.
     out = flares.binned_weighted_quantile(x, y, ws, bins, quantiles)
+    out_dust = flares.binned_weighted_quantile(x, yy, ws, bins, quantiles)
 
     # --- plot the median and quantiles for bins with >10 galaxies
 
@@ -141,21 +151,30 @@ for i, tag in enumerate(np.flip(fl.tags)):
     Ns = N > 10
 
     axes.flatten()[i].plot(bincen, out[:, 1], c=cmap(norm(z)), ls=':')
-    axes.flatten()[i].plot(bincen[Ns], out[:, 1][Ns], c=cmap(norm(z)), label=rf'$\rm z={int(z)}$')
+    axes.flatten()[i].plot(bincen[Ns], out[:, 1][Ns], c=cmap(norm(z)), ls='-', label=rf'$\rm z={int(z)}$')
     axes.flatten()[i].fill_between(bincen[Ns], out[:, 0][Ns], out[:, 2][Ns], color=cmap(norm(z)),
                                    alpha=0.4)
 
+    axes.flatten()[i].plot(bincen, out_dust[:, 1], c=cmap(norm(z)), ls=':', alpha=0.6)
+    axes.flatten()[i].plot(bincen[Ns], out_dust[:, 1][Ns], c=cmap(norm(z)), ls='-.', label=rf'$\rm z={int(z)}$', alpha=0.6)
+    axes.flatten()[i].fill_between(bincen[Ns], out_dust[:, 0][Ns], out_dust[:, 2][Ns], color=cmap(norm(z)),
+                                   alpha=0.2)
+
     axes.flatten()[i].axhline(0, alpha=0.8, c='k', ls='--', linewidth=1)
 
-    axes.flatten()[i].set_xlim(28)
+    axes.flatten()[i].set_xlim(9, 11)
     axes.flatten()[i].set_ylim(-8, 1.5)
-    axes.flatten()[i].set_xticks([28, 29, 30])
+
+    axes.flatten()[i].set_xticks([9, 9.5, 10, 10.5])
 
     s_outshine = (y > 0)
+    s_outshine_dust = (yy > 0)
 
     print(np.sum(s_outshine))
+    print(np.sum(s_outshine_dust))
 
-    axes.flatten()[i].scatter(x[s_outshine], y[s_outshine], s=5, color=cmap(norm(z)))
+    axes.flatten()[i].scatter(x[s_outshine], y[s_outshine], s=5, color=cmap(norm(z)), alpha=0.6)
+    axes.flatten()[i].scatter(x[s_outshine_dust], y[s_outshine_dust], marker='^', s=5, color=cmap(norm(z)))
 
     axes.flatten()[i].text(0.97, 0.92, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
                            color=cmap(norm(z)), ha='right')
@@ -165,8 +184,8 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
 fig.text(0.01, 0.55, r'$\rm log_{10}[L_{AGN, FUV} \; / \; L_{stellar, FUV}]$', ha='left', va='center',
          rotation='vertical', fontsize=10)
-fig.text(0.45, 0.05, r'$\rm log_{10}[L_{stellar, FUV}\;/\;erg\,s^{-1}\,Hz^{-1}]$', ha='center', va='bottom',
+fig.text(0.45, 0.05, r'$\rm log_{10}[M_{*}\;/\;M_{\odot}]$', ha='center', va='bottom',
          fontsize=10)
 
-fig.savefig(f'figures/agn_fuv_dust_frac_grid_lstar_coarse_test.pdf', bbox_inches='tight')
+fig.savefig(f'figures/agn_intrinsic_dust_stellar_dust_frac_grid_mstar_coarse.pdf', bbox_inches='tight')
 fig.clf()
