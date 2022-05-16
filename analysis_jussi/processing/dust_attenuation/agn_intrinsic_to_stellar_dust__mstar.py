@@ -5,6 +5,7 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 mpl.use('Agg')
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as PathEffects
 
 import flares
 
@@ -174,10 +175,11 @@ for i, tag in enumerate(np.flip(fl.tags)):
     print(np.sum(s_outshine_dust))
 
     axes.flatten()[i].scatter(x[s_outshine], y[s_outshine], s=5, color=cmap(norm(z)), alpha=0.6)
-    axes.flatten()[i].scatter(x[s_outshine_dust], y[s_outshine_dust], marker='^', s=5, color=cmap(norm(z)))
+    axes.flatten()[i].scatter(x[s_outshine_dust], y[s_outshine_dust], s=10, marker='X', edgecolors='white', linewidth=0.3, facecolor='black') #cmap(norm(z)))
 
-    axes.flatten()[i].text(0.97, 0.92, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
+    txt = axes.flatten()[i].text(0.97, 0.92, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
                            color=cmap(norm(z)), ha='right')
+    txt.set_path_effects([PathEffects.withStroke(linewidth=0.3, foreground='k')])
 
     # ax.set_xlabel(r'$\rm log_{10}[L_{FUV}\;/\;erg\,s^{-1}\,Hz^{-1}]$')
     # ax.set_ylabel(r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\, dex^{-1}]$')

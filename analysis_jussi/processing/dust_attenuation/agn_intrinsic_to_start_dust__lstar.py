@@ -5,6 +5,7 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 mpl.use('Agg')
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as PathEffects
 
 import flares
 
@@ -125,7 +126,7 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
     y_int = np.log10(y /  ((const.c/(1500*u.AA).to(u.m)).to(u.Hz)).value)
 
-    y_dust = attn(y, los[s_t], dtm[s_t])
+    y_dust = attn(y_int, los[s_t], dtm[s_t])
 
     x = lstar[s_t]
     print(min(x), max(x))
@@ -134,11 +135,14 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
     y = np.log10(10**y_int / 10 ** lstar[s_t])
 
+    yy = np.log10(10**y_dust / 10 ** lstar[s_t])
+
     # -- this will calculate the weighted quantiles of the distribution
     quantiles = [0.84, 0.50, 0.16]  # quantiles for range
     bins = np.arange(28, 31, 0.2)  #  x-coordinate bins
     bincen = (bins[:-1] + bins[1:]) / 2.
     out = flares.binned_weighted_quantile(x, y, ws, bins, quantiles)
+    out_dust = flares.binned_weighted_quantile(x, yy, ws, bins, quantiles)
 
     # --- plot the median and quantiles for bins with >10 galaxies
 
@@ -146,9 +150,15 @@ for i, tag in enumerate(np.flip(fl.tags)):
     Ns = N > 10
 
     axes.flatten()[i].plot(bincen, out[:, 1], c=cmap(norm(z)), ls=':')
-    axes.flatten()[i].plot(bincen[Ns], out[:, 1][Ns], c=cmap(norm(z)), label=rf'$\rm z={int(z)}$')
+    axes.flatten()[i].plot(bincen[Ns], out[:, 1][Ns], c=cmap(norm(z)), ls='-', label=rf'$\rm z={int(z)}$')
     axes.flatten()[i].fill_between(bincen[Ns], out[:, 0][Ns], out[:, 2][Ns], color=cmap(norm(z)),
                                    alpha=0.4)
+
+    axes.flatten()[i].plot(bincen, out_dust[:, 1], c=cmap(norm(z)), ls=':', alpha=0.6)
+    axes.flatten()[i].plot(bincen[Ns], out_dust[:, 1][Ns], c=cmap(norm(z)), ls='-.', label=rf'$\rm z={int(z)}$',
+                           alpha=0.6)
+    axes.flatten()[i].fill_between(bincen[Ns], out_dust[:, 0][Ns], out_dust[:, 2][Ns], color=cmap(norm(z)),
+                                   alpha=0.2)
 
     axes.flatten()[i].axhline(0, alpha=0.8, c='k', ls='--', linewidth=1)
 
@@ -157,21 +167,25 @@ for i, tag in enumerate(np.flip(fl.tags)):
     axes.flatten()[i].set_xticks([28, 29, 30])
 
     s_outshine = (y > 0)
+    s_outshine_dust = (yy > 0)
 
     print(np.sum(s_outshine))
+    print(np.sum(s_outshine_dust))
 
-    axes.flatten()[i].scatter(x[s_outshine], y[s_outshine], s=5, color=cmap(norm(z)))
+    axes.flatten()[i].scatter(x[s_outshine], y[s_outshine], s=5, color=cmap(norm(z)), alpha=0.6)
+    axes.flatten()[i].scatter(x[s_outshine_dust], y[s_outshine_dust], s=10, marker='X', edgecolors='white', linewidth=0.3, facecolor='black') #cmap(norm(z)))
 
-    axes.flatten()[i].text(0.97, 0.92, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
+    txt = axes.flatten()[i].text(0.97, 0.92, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
                            color=cmap(norm(z)), ha='right')
+    txt.set_path_effects([PathEffects.withStroke(linewidth=0.3, foreground='k')])
 
     # ax.set_xlabel(r'$\rm log_{10}[L_{FUV}\;/\;erg\,s^{-1}\,Hz^{-1}]$')
     # ax.set_ylabel(r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\, dex^{-1}]$')
 
-fig.text(0.01, 0.55, r'$\rm log_{10}[L_{AGN, FUV, intrinsic} \; / \; L_{stellar, FUV, dust}]$', ha='left', va='center',
+fig.text(0.01, 0.55, r'$\rm log_{10}[L_{AGN, FUV} \; / \; L_{stellar, FUV}]$', ha='left', va='center',
          rotation='vertical', fontsize=10)
 fig.text(0.45, 0.05, r'$\rm log_{10}[L_{stellar, FUV}\;/\;erg\,s^{-1}\,Hz^{-1}]$', ha='center', va='bottom',
          fontsize=10)
 
-fig.savefig(f'figures/agn_intrinsic_stellar_dust_frac_grid_lstar_coarse.pdf', bbox_inches='tight')
+fig.savefig(f'figures/agn_intrinsic_dust_stellar_dust_frac_grid_lstar_coarse.pdf', bbox_inches='tight')
 fig.clf()
