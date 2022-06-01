@@ -60,7 +60,7 @@ tags = fl.tags
 
 MBH = fl.load_dataset('BH_Mass', arr_type='Galaxy') # Black hole mass of galaxy
 MDOT = fl.load_dataset('BH_Mdot', arr_type='Galaxy') # Black hole accretion rate
-MS = fl.load_dataset('Mstar_30', arr_type='Galaxy') # Black hole accretion rate
+MS = fl.load_dataset('Mstar', arr_type='Galaxy') # Black hole accretion rate
 LFUV = fl.load_dataset('FUV', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity/Intrinsic/')
 LBOL = fl.load_dataset('Intrinsic', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Indices/Lbol/')
 
@@ -98,9 +98,7 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
 
     # converting MBHacc units to M_sol/yr
-    x *= h * 6.445909132449984E23  # g/s
-    x = x/constants.M_sun.to('g').value  # convert to M_sol/s
-    x *= units.yr.to('s')  # convert to M_sol/yr
+    x *= h
 
 
     y *= 10**10
@@ -169,6 +167,6 @@ axes.flatten()[i].legend(loc='center right')
 fig.text(0.01, 0.55, r'$\rm log_{10}[L_{FUV} \; / \; L_{bol}]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
 fig.text(0.45,0.05, r'$\rm log_{10}[M_{*}\;/\;M_{\odot}]$', ha = 'center', va = 'bottom', fontsize=10)
 
-fig.savefig(f'figures/fuv_to_bol__mstar__grid.pdf', bbox_inches='tight')
+fig.savefig(f'figures/fuv_to_bol__mstar__grid_newfile.pdf', bbox_inches='tight')
 fig.clf()
 

@@ -55,6 +55,17 @@ def attn(lum, bh_los, dtm_ratio, lam=1500, kappa=0.0795, gamma=-1):
     # lum = log10(L)
     return np.log10(10**lum*np.exp(-1*tau_dust(bh_los, dtm_ratio, lam, kappa, gamma)))
 
+def ax_M_to_lum(x):
+    return np.log10(photom.M_to_lum(x))
+
+def ax_lum_to_M(x):
+    return photom.lum_to_M(10**x)
+
+def ax_y_M_to_lum(x):
+    return np.log10(10**x/0.4)
+
+def ax_y_lum_to_M(x):
+    return np.log10(10**x*0.4)
 
 cmap = mpl.cm.plasma
 norm = mpl.colors.Normalize(vmin=5., vmax=10.)
@@ -87,7 +98,8 @@ weights = np.array(df['weights'])
 attn_out = {}
 
 fig, axes = plt.subplots(2, 3, figsize = (6, 4), sharex = True, sharey=True)
-fig.subplots_adjust(left=0.07, bottom=0.15, top=1.0, right=0.85, wspace=0.0, hspace=0.0)
+fig.subplots_adjust(left=0.085, bottom=0.15, top=0.9, right=0.85, wspace=0.0, hspace=0.0)
+
 for i, tag in enumerate(np.flip(fl.tags)):
 
     z = np.flip(fl.zeds)[i]
@@ -234,6 +246,14 @@ for i, tag in enumerate(np.flip(fl.tags)):
         axes.flatten()[i].scatter(literature['Harikane+2021']['Galaxy+AGN']['z5']['M'],
                                   np.log10(literature['Harikane+2021']['Galaxy+AGN']['z5']['phi']), s=5, marker='v', c='black')
 
+        for jj in range(len(literature['Ono+2018']['Galaxy+AGN']['z5']['M'])):
+            M_ = [literature['Ono+2018']['Galaxy+AGN']['z5']['M'][jj], literature['Ono+2018']['Galaxy+AGN']['z5']['M'][jj]]
+            err = [np.log10(literature['Ono+2018']['Galaxy+AGN']['z5']['phi_lo'][jj]),
+                   np.log10(literature['Ono+2018']['Galaxy+AGN']['z5']['phi_hi'][jj])]
+            axes.flatten()[i].plot(M_, err, lw=1, ls='-', c='forestgreen', alpha=0.8)
+
+        axes.flatten()[i].scatter(literature['Ono+2018']['Galaxy+AGN']['z5']['M'],
+                                  np.log10(literature['Ono+2018']['Galaxy+AGN']['z5']['phi']), s=5, marker='o', c='forestgreen')
 
     if z == 6.0:
         for jj in range(len(literature['Harikane+2021']['Galaxy+AGN']['z6']['M'])):
@@ -244,6 +264,15 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
         axes.flatten()[i].scatter(literature['Harikane+2021']['Galaxy+AGN']['z6']['M'],
                                   np.log10(literature['Harikane+2021']['Galaxy+AGN']['z6']['phi']), s=5, marker='v', c='black')
+
+        for jj in range(len(literature['Ono+2018']['Galaxy+AGN']['z6']['M'])):
+            M_ = [literature['Ono+2018']['Galaxy+AGN']['z6']['M'][jj], literature['Ono+2018']['Galaxy+AGN']['z6']['M'][jj]]
+            err = [np.log10(literature['Ono+2018']['Galaxy+AGN']['z6']['phi_lo'][jj]),
+                   np.log10(literature['Ono+2018']['Galaxy+AGN']['z6']['phi_hi'][jj])]
+            axes.flatten()[i].plot(M_, err, lw=1, ls='-', c='forestgreen', alpha=0.8)
+
+        axes.flatten()[i].scatter(literature['Ono+2018']['Galaxy+AGN']['z6']['M'],
+                                  np.log10(literature['Ono+2018']['Galaxy+AGN']['z6']['phi']), s=5, marker='o', c='forestgreen')
 
     if z == 7.0:
 
@@ -256,6 +285,15 @@ for i, tag in enumerate(np.flip(fl.tags)):
         axes.flatten()[i].scatter(literature['Harikane+2021']['Galaxy+AGN']['z7']['M'],
                                   np.log10(literature['Harikane+2021']['Galaxy+AGN']['z7']['phi']), s=5, marker='v', c='black')
 
+        for jj in range(len(literature['Ono+2018']['Galaxy+AGN']['z7']['M'])):
+            M_ = [literature['Ono+2018']['Galaxy+AGN']['z7']['M'][jj], literature['Ono+2018']['Galaxy+AGN']['z7']['M'][jj]]
+            err = [np.log10(literature['Ono+2018']['Galaxy+AGN']['z7']['phi_lo'][jj]),
+                   np.log10(literature['Ono+2018']['Galaxy+AGN']['z7']['phi_hi'][jj])]
+            axes.flatten()[i].plot(M_, err, lw=1, ls='-', c='forestgreen', alpha=0.8)
+
+        axes.flatten()[i].scatter(literature['Ono+2018']['Galaxy+AGN']['z7']['M'],
+                                  np.log10(literature['Ono+2018']['Galaxy+AGN']['z7']['phi']), s=5, marker='o', c='forestgreen')
+
     txt = axes.flatten()[i].text(0.97, 0.92, r'$\rm z={0:.0f}$'.format(z), fontsize=8,
                                  transform=axes.flatten()[i].transAxes,
                                  color=cmap(norm(z)), ha='right')
@@ -267,20 +305,35 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
     axes.flatten()[i].invert_xaxis()
 
+    secax_x = axes.flatten()[i].secondary_xaxis('top', functions=(ax_M_to_lum, ax_lum_to_M))
+
+    secax_y = axes.flatten()[i].secondary_yaxis('right', functions=(ax_y_M_to_lum, ax_y_lum_to_M))
+
+    if i > 2:
+        secax_x.xaxis.set_ticklabels([])
+
+    if i != 2 and i != 5:
+        secax_y.yaxis.set_ticklabels([])
+
+axes.flatten()[0].errorbar(-99, -99, 1, ms=2, marker='v', ls='none', c='black', mew=2, label='Harikane+21')
+axes.flatten()[1].errorbar(-99, -99, 1, ms=2, marker='^', ls='none', c='purple', mew=2, label='Niida+20')
+axes.flatten()[2].errorbar(-99, -99, 1, ms=2, marker='o', ls='none', c='forestgreen', mew=2, label='Ono+18')
 
 axes.flatten()[5].plot(-99, -99, ls='-', c='k', alpha=0.6, label=rf'Stellar')
 axes.flatten()[5].plot(-99, -99, ls='--', c='k', alpha=0.6, label=rf'$\rm AGN_{{intrinsic}}$')
 axes.flatten()[5].plot(-99, -99, ls=':', c='k', alpha=0.6, label=rf'$\rm AGN_{{dust}}$')
 axes.flatten()[5].fill_between([-99, -90], [-99, -99], [-90, -90], color='k', alpha=0.4, label=rf'Stellar + $\rm AGN_{{intrinsic, dust}}$')
 
-axes.flatten()[0].errorbar(-99, -99, 1, ms=2, marker='^', ls='none', c='purple', mew=2, label='Niida+20')
-axes.flatten()[0].errorbar(-99, -99, 1, ms=2, marker='v', ls='none', c='black', mew=2, label='Harikane+21')
-
-axes.flatten()[0].legend(loc='lower left', prop={'size': 6})
+axes.flatten()[0].legend(loc='upper left', prop={'size': 6})
+axes.flatten()[1].legend(loc='upper left', prop={'size': 6})
+axes.flatten()[2].legend(loc='upper left', prop={'size': 6})
 axes.flatten()[5].legend(loc='upper left', prop={'size': 6})
 
-fig.text(0.01, 0.55, r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\, mag^{-1}]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
+fig.text(0.01, 0.55, r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\; mag^{-1}]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
 fig.text(0.45,0.05, r'$\rm M_{FUV}$', ha = 'center', va = 'bottom', fontsize=10)
 
-fig.savefig(f'figures/uvlf__agn_dust__intrinsic_comparisons_grid_magnitude.pdf', bbox_inches='tight')
+fig.text(0.9, 0.55, r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\; erg^{-1} \; s \; Hz]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
+fig.text(0.45,0.96, r'$\rm log_{10}[L \; / \; erg \; s^{-1}]$', ha = 'center', va = 'bottom', fontsize=10)
+
+fig.savefig(f'figures/uvlf__agn_dust__intrinsic_comparisons_grid_both.pdf', bbox_inches='tight')
 fig.clf()
