@@ -19,7 +19,7 @@ deltas = np.array([0.969639,0.918132,0.851838,0.849271,0.845644,0.842128,0.84129
 
 flares_dir = '../../../data/simulations'
 
-fl = flares.flares(f'{flares_dir}/flares.hdf5', sim_type='FLARES')
+fl = flares.flares(f'{flares_dir}/flares_no_particlesed.hdf5', sim_type='FLARES')
 
 halo = fl.halos
 
@@ -37,9 +37,9 @@ log10Mstar_limit = 9.
 
 # converting MBHacc units to M_sol/yr
 h = 0.6777  # Hubble parameter
-BH_Mdot_scaling = h * 6.445909132449984E23  # g/s
-BH_Mdot_scaling /= constants.M_sun.to('g').value  # convert to M_sol/s
-BH_Mdot_scaling *= units.yr.to('s')  # convert to M_sol/yr
+BH_Mdot_scaling = h #* 6.445909132449984E23  # g/s
+#BH_Mdot_scaling /= constants.M_sun.to('g').value  # convert to M_sol/s
+#BH_Mdot_scaling *= units.yr.to('s')  # convert to M_sol/yr
 
 
 
@@ -47,8 +47,8 @@ BH_Mdot_scaling *= units.yr.to('s')  # convert to M_sol/yr
 # --- define quantities to read in [not those for the corner plot, that's done later]
 
 quantities = []
-quantities.append({'path': 'Galaxy', 'dataset': 'SFR_inst_30', 'name': None, 'scaling': None})
-quantities.append({'path': 'Galaxy', 'dataset': 'Mstar_30', 'name': None, 'scaling': 1E10})
+quantities.append({'path': 'Galaxy', 'dataset': 'SFR_aperture/SFR_30/SFR_inst', 'name': 'SFR_inst_30', 'scaling': None})
+quantities.append({'path': 'Galaxy', 'dataset': 'Mstar_aperture/Mstar_30', 'name': 'Mstar_30', 'scaling': 1E10})
 quantities.append({'path': 'Galaxy', 'dataset': 'BH_Mass', 'name': None, 'scaling': 1E10})
 quantities.append({'path': 'Galaxy', 'dataset': 'BH_Mdot', 'name': None, 'scaling': BH_Mdot_scaling})
 
@@ -104,7 +104,7 @@ D['log10sSFR'] = np.log10(D['SFR_inst_30'])-np.log10(D['Mstar_30'])+9
 
 # ----------------------------------------------
 # define selection
-s = (D['log10Mstar_30']>log10Mstar_limit)&(D['BH_Mass']>0)
+s = (D['log10Mstar_30']>log10Mstar_limit)&(D['log10BH_Mass']>5.5)&(D['log10sSFR']>-1)&(D['log10sSFR']>-1)&(D['log10BH_Mdot']>-3.5)
 
 # ----------------------------------------------
 # Print info
@@ -128,13 +128,13 @@ labels['beta'] = r'\beta'
 labels['log10HbetaEW'] = r'\log_{10}(H\beta\ EW/\AA)'
 labels['log10FUV'] = r'\log_{10}(L_{FUV}/erg\ s^{-1}\ Hz^{-1})'
 labels['AFUV'] = r'A_{FUV}'
-labels['log10BH_Mass'] = r'\log_{10}({\rm M_{\bullet}}/{\rm M_{\odot})}'
-labels['log10BH_Mdot'] = r'\log_{10}({\rm \dot{M}_{\bullet}}/{\rm M_{\odot}\ yr^{-1})}'
+labels['log10BH_Mass'] = r'\log_{10}({\rm M_{SMBH}}/{\rm M_{\odot})}'
+labels['log10BH_Mdot'] = r'\log_{10}({\rm \dot{M}_{SMBH}}/{\rm M_{\odot}\ yr^{-1})}'
 
 limits = {}
 limits['log10Mstar_30'] = [log10Mstar_limit,11]
-limits['log10BH_Mass'] = [5.1,9.9]
-limits['log10BH_Mdot'] = [-2.9,1.9]
+limits['log10BH_Mass'] = [5.5,9.5]
+limits['log10BH_Mdot'] = [-3.5,1.5]
 limits['beta'] = [-2.9,-1.1]
 limits['log10sSFR'] = [-0.9,1.9]
 limits['log10HbetaEW'] = [0.01,2.49]
@@ -174,7 +174,7 @@ for i,x in enumerate(properties):
 
             # --- weighted median Lines
 
-            bins = np.linspace(*limits[x], 20)
+            bins = np.linspace(*limits[x], 10)
             bincen = (bins[:-1]+bins[1:])/2.
             out = flares.binned_weighted_quantile(D[x][s],D[y][s], ws[s],bins,[0.84,0.50,0.16])
 
@@ -199,7 +199,7 @@ for i,x in enumerate(properties):
 
     # --- histograms
 
-    bins = 50
+    bins = 20
 
     ax = axes[ii, ii]
     ax.set_axis_on()
