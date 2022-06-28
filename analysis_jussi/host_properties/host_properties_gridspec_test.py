@@ -172,15 +172,18 @@ def plot_cell(ax, tag_index, x_name, y_name):
     s = D[tags[tag_index]]['selection']
     x = D[tags[tag_index]][x_name][D[tags[tag_index]]['selection']]
     y = D[tags[tag_index]][y_name][D[tags[tag_index]]['selection']]
-    ax.scatter(x, y, s=1, alpha=0.5, color=cmap(norm(zeds[tag_index])))
+    ax.scatter(x, y, s=1, alpha=0.2, color=cmap(norm(zeds[tag_index])))
     # --- weighted median Lines
 
     bins = np.linspace(*limits[x_name], 10)
     bincen = (bins[:-1] + bins[1:]) / 2.
     out = flares.binned_weighted_quantile(x, y, ws[tags[tag_index]][s], bins, [0.84, 0.50, 0.16])
 
+    N, bins_ = np.histogram(x, bins=bins)
+    Ns = (N >= 5)
+
     ax.plot(bincen, out[:, 1], c='k', ls='-')
-    # ax.fill_between(bincen[Ns], out[:,0][Ns], out[:,2][Ns], color='k', alpha = 0.2)
+    ax.fill_between(bincen[Ns], out[:,0][Ns], out[:,2][Ns], color='k', alpha = 0.3)
 
     ax.set_xlim(limits[x_name])
     ax.set_ylim(limits[y_name])
