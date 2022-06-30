@@ -101,9 +101,18 @@ weights = np.array(df['weights'])
 attn_out = {}
 
 density = {}
-density["bolometric"] = np.array([])
-density["uv_intrinsic"] = np.array([])
-density["uv_attenuated"] = np.array([])
+density["obj"] = {}
+density["gal"] = {}
+density["agn"] = {}
+density["obj"]["bolometric"] = np.array([])
+density["obj"]["uv_intrinsic"] = np.array([])
+density["obj"]["uv_attenuated"] = np.array([])
+density["gal"]["bolometric"] = np.array([])
+density["gal"]["uv_intrinsic"] = np.array([])
+density["gal"]["uv_attenuated"] = np.array([])
+density["agn"]["bolometric"] = np.array([])
+density["agn"]["uv_intrinsic"] = np.array([])
+density["agn"]["uv_attenuated"] = np.array([])
 
 for i, tag in enumerate(np.flip(fl.tags)):
 
@@ -142,6 +151,8 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
     q = np.array([l_agn(g, etta=0.1) for g in x[s_t]])
 
+    agn_bolometric = 10**q[:]
+
     x = np.array(mstar)[s_t]
 
 
@@ -150,27 +161,31 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
     y = np.log10(y /  ((const.c/(1500*u.AA).to(u.m)).to(u.Hz)).value)
 
-    y_intrinsic = y[:]
+    agn_intrinsic = 10**y[:]
 
-    y = attn(y, los[s_t], dtm[s_t])
+    agn_dust = 10**attn(y, los[s_t], dtm[s_t])
 
-    attn_out[str(z)] = {'attn': (attn(0, los[s_t], dtm[s_t])), 'mstar': mstar[s_t], 'ws': ws, 'tau': tau_dust(los[s_t], dtm[s_t])}
+    lstar_uv = 10**lstar[s_t]
+    lstar_bolometric = 10**lbol[s_t]
 
-    lstar_uv = lstar[s_t]
-    lstar_bolometric = lbol[s_t]
+    obj_bolometric = lstar_bolometric + agn_bolometric
+    obj_uv_intrinsic = lstar_uv + agn_intrinsic
+    obj_uv_dust = lstar_uv + agn_dust
 
-    obj_bolometric = np.log10(10**lstar_bolometric + 10**q)
-    obj_uv_intrinsic = np.log10(10**lstar_uv + 10**y_intrinsic)
-    obj_uv_dust = np.log10(10**lstar_uv + 10**y)
-
-    binw = 1
-    bins = np.arange(25,32,binw)
+    bins = np.linspace(10**25,10**32,100)
+    binw = bins[1]-bins[0]
     b_c = bins[:-1]+binw/2
 
-    binw2 = 1
-    bins2 = np.arange(35, 50, binw2)
+    bins2 = np.linspace(10**35, 10**50, 100)
+    binw2 = bins2[1] - bins2[0]
     b_c2 = bins2[:-1] + binw2 / 2
 
+    N_agn_weighted_dusty, edges_dusty = np.histogram(agn_dust, bins=bins, weights=ws)
+    N_agn_weighted_intrinsic, edges_intrinsic = np.histogram(agn_intrinsic, bins=bins, weights=ws)
+    N_agn_weighted_bolometric, edges_bolometric = np.histogram(agn_bolometric, bins=bins2, weights=ws)
+
+    N_gal_dusty, edges_dusty = np.histogram(lstar_uv, bins=bins, weights=ws)
+    N_gal_bolometric, edges_bolometric = np.histogram(lstar_bolometric, bins=bins2, weights=ws)
 
     N_weighted_dusty, edges_dusty = np.histogram(obj_uv_dust, bins = bins, weights = ws)
 
@@ -185,14 +200,26 @@ for i, tag in enumerate(np.flip(fl.tags)):
     phi_intrinsic = N_weighted_intrinsic / (binw * vol)
     phi_dusty = N_weighted_dusty / (binw * vol)
 
-    density["bolometric"] = np.append(density["bolometric"], lum_density(b_c2, phi_bolometric))
-    density["uv_intrinsic"] = np.append(density["uv_intrinsic"], lum_density(b_c, phi_intrinsic))
-    density["uv_attenuated"] = np.append(density["uv_attenuated"], lum_density(b_c, phi_dusty))
+    phi_agn_bolometric = N_agn_weighted_bolometric / (binw2*vol)
+    phi_agn_intrinsic = N_agn_weighted_intrinsic / (binw*vol)
+    phi_agn_dusty = N_agn_weighted_dusty / (binw*vol)
 
-print(density["bolometric"])
+    phi_gal_bolometric = N_gal_bolometric / (binw2*vol)
+    phi_gal_dusty = N_gal_dusty / (binw*vol)
+
+    density["obj"]["bolometric"] = np.append(density["obj"]["bolometric"], lum_density(b_c2, phi_bolometric))
+    density["obj"]["uv_intrinsic"] = np.append(density["obj"]["uv_intrinsic"], lum_density(b_c, phi_intrinsic))
+    density["obj"]["uv_attenuated"] = np.append(density["obj"]["uv_attenuated"], lum_density(b_c, phi_dusty))
+
+    density["agn"]["bolometric"] = np.append(density["agn"]["bolometric"], lum_density(b_c2, phi_agn_bolometric))
+    density["agn"]["uv_intrinsic"] = np.append(density["agn"]["uv_intrinsic"], lum_density(b_c, phi_agn_intrinsic))
+    density["agn"]["uv_attenuated"] = np.append(density["agn"]["uv_attenuated"], lum_density(b_c, phi_agn_dusty))
+
+    density["gal"]["bolometric"] = np.append(density["gal"]["bolometric"], lum_density(b_c2, phi_gal_bolometric))
+    density["gal"]["uv_attenuated"] = np.append(density["gal"]["uv_attenuated"], lum_density(b_c, phi_gal_dusty))
 
 plt.figure()
-plt.plot(np.flip(fl.zeds), np.log10(density["bolometric"]))
-plt.plot(np.flip(fl.zeds), np.log10(density["uv_intrinsic"]))
-plt.plot(np.flip(fl.zeds), np.log10(density["uv_attenuated"]), '--')
+plt.plot(np.flip(fl.zeds), np.log10(density["gal"]["uv_attenuated"]))
+plt.plot(np.flip(fl.zeds), np.log10(density["agn"]["uv_intrinsic"]))
+plt.plot(np.flip(fl.zeds), np.log10(density["agn"]["uv_attenuated"]))
 plt.show()
