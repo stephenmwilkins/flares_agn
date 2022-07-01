@@ -102,18 +102,7 @@ weights = np.array(df['weights'])
 attn_out = {}
 
 density = {}
-density["obj"] = {}
-density["gal"] = {}
-density["agn"] = {}
-density["obj"]["bolometric"] = np.array([])
-density["obj"]["uv_intrinsic"] = np.array([])
-density["obj"]["uv_attenuated"] = np.array([])
-density["gal"]["bolometric"] = np.array([])
-density["gal"]["uv_intrinsic"] = np.array([])
-density["gal"]["uv_attenuated"] = np.array([])
-density["agn"]["bolometric"] = np.array([])
-density["agn"]["uv_intrinsic"] = np.array([])
-density["agn"]["uv_attenuated"] = np.array([])
+
 
 for i, tag in enumerate(np.flip(fl.tags)):
 
@@ -164,72 +153,97 @@ for i, tag in enumerate(np.flip(fl.tags)):
     y = np.log10(y /  ((const.c/(1500*u.AA).to(u.m)).to(u.Hz)).value)
 
     agn_intrinsic = 10**y[:]
-
     agn_dust = 10**attn(y, los[s_t], dtm[s_t])
 
     lstar_uv = 10**lstar[s_t]
     lstar_uv_int = 10**lstar_int[s_t]
     lstar_bolometric = 10**lbol[s_t]
 
-    obj_bolometric = lstar_bolometric + agn_bolometric
-    obj_uv_intrinsic = lstar_uv + agn_intrinsic
-    obj_uv_dust = lstar_uv + agn_dust
 
-    bins = np.linspace(10**25,10**32,100)
+    bol_lim = 43.
+
+    s_bol_agn = (np.log10(agn_bolometric) > bol_lim)
+    s_bol_gal = (np.log10(lstar_bolometric) > bol_lim)
+
+    ws_agn = ws[s_bol_agn]
+    ws_gal = ws[s_bol_gal]
+
+    obj_bolometric = np.sort(np.concatenate((np.log10(lstar_bolometric[s_bol_gal]), np.log10(agn_bolometric[s_bol_agn]))))
+    obj_uv_intrinsic = np.sort(np.log10(lstar_uv + agn_intrinsic))
+    obj_uv_dust = np.sort(np.log10(lstar_uv + agn_dust))
+
+    agn_bolometric = np.sort(np.log10(agn_bolometric[s_bol_agn]))
+    agn_intrinsic = np.sort( np.log10(agn_intrinsic))
+    agn_dust = np.sort(np.log10(agn_dust))
+
+    gal_bolometric = np.sort(np.log10(lstar_bolometric[s_bol_gal]))
+    gal_intrinsic = np.sort(np.log10(lstar_uv_int))
+    gal_dust = np.sort(np.log10(lstar_uv))
+
+
+    print(f"z = {z}, lum bolometric obj:\nmin = {min(obj_bolometric):.4f}, max = {max(obj_bolometric):.4f}")
+    print(f"z = {z}, lum uv intrins obj:\nmin = {min(obj_uv_intrinsic):.4f}, max = {max(obj_uv_intrinsic):.4f}")
+    print(f"z = {z}, lum uv dusty   obj:\nmin = {min(obj_uv_dust):.4f}, max = {max(obj_uv_dust):.4f}\n")
+
+    print(f"z = {z}, lum bolometric agn:\nmin = {min(agn_bolometric):.4f}, max = {max(agn_bolometric):.4f}")
+    print(f"z = {z}, lum uv intrins agn:\nmin = {min(agn_intrinsic):.4f}, max = {max(agn_intrinsic):.4f}")
+    print(f"z = {z}, lum uv dusty   agn:\nmin = {min(agn_dust):.4f}, max = {max(agn_dust):.4f}\n")
+
+    print(f"z = {z}, lum bolometric gal:\nmin = {min(gal_bolometric):.4f}, max = {max(gal_bolometric):.4f}")
+    print(f"z = {z}, lum uv intrins gal:\nmin = {min(gal_intrinsic):.4f}, max = {max(gal_intrinsic):.4f}")
+    print(f"z = {z}, lum uv dusty   gal:\nmin = {min(gal_dust):.4f}, max = {max(gal_dust):.4f}\n")
+
+    bins = np.linspace(25,32,100)
     binw = bins[1]-bins[0]
     b_c = bins[:-1]+binw/2
 
-    bins2 = np.linspace(10**35, 10**50, 100)
+    bins2 = np.linspace(bol_lim, 46, 100)
     binw2 = bins2[1] - bins2[0]
     b_c2 = bins2[:-1] + binw2 / 2
 
-    N_agn_weighted_dusty, edges_dusty = np.histogram(agn_dust, bins=bins, weights=ws)
-    N_agn_weighted_intrinsic, edges_intrinsic = np.histogram(agn_intrinsic, bins=bins, weights=ws)
-    N_agn_weighted_bolometric, edges_bolometric = np.histogram(agn_bolometric, bins=bins2, weights=ws)
+    def cumsum_(x, bins, ws):
+        N, edges = np.histogram(x, bins=bins, weights=ws)
+        sum_ = np.cumsum(np.sort(N))
+        return sum_/sum_[-1]
 
-    N_gal_dusty, edges_dusty = np.histogram(lstar_uv, bins=bins, weights=ws)
-    N_gal_intrinsic, edges_intrinsic = np.histogram(lstar_uv_int, bins=bins, weights=ws)
-    N_gal_bolometric, edges_bolometric = np.histogram(lstar_bolometric, bins=bins2, weights=ws)
+    #obj_cum_bol = cumsum_(obj_bolometric, bins2)
+    obj_cum_int = cumsum_(obj_uv_intrinsic, bins, ws)
+    obj_cum_dust = cumsum_(obj_uv_dust, bins, ws)
 
-    N_weighted_dusty, edges_dusty = np.histogram(obj_uv_dust, bins = bins, weights = ws)
-    N_weighted_intrinsic, edges_intrinsic = np.histogram(obj_uv_intrinsic, bins=bins, weights=ws)
-    N_weighted_bolometric, edges_bolometric = np.histogram(obj_bolometric, bins=bins2, weights=ws)
+    agn_cum_bol = cumsum_(agn_bolometric, bins2, ws_agn)
+    agn_cum_int = cumsum_(agn_intrinsic, bins, ws)
+    agn_cum_dust = cumsum_(agn_dust, bins, ws)
 
-    h = 0.6777
-    vol = (4/3)*np.pi*(14/h)**3
+    gal_cum_bol = cumsum_(gal_bolometric, bins2, ws_gal)
+    gal_cum_int = cumsum_(gal_intrinsic, bins, ws)
+    gal_cum_dust = cumsum_(gal_dust, bins, ws)
 
-    phi_bolometric = N_weighted_bolometric / (binw2*vol)
-    phi_intrinsic = N_weighted_intrinsic / (binw * vol)
-    phi_dusty = N_weighted_dusty / (binw * vol)
+    density[str(z)] = {}
 
-    phi_agn_bolometric = N_agn_weighted_bolometric / (binw2*vol)
-    phi_agn_intrinsic = N_agn_weighted_intrinsic / (binw*vol)
-    phi_agn_dusty = N_agn_weighted_dusty / (binw*vol)
+    density[str(z)]["obj"] = {}
+    density[str(z)]["gal"] = {}
+    density[str(z)]["agn"] = {}
 
-    phi_gal_bolometric = N_gal_bolometric / (binw2*vol)
-    phi_gal_intrinsic = N_gal_intrinsic / (binw * vol)
-    phi_gal_dusty = N_gal_dusty / (binw*vol)
+    density[str(z)]["obj"]["bolometric"] = (b_c2, (gal_cum_bol+agn_cum_bol)/2)
+    density[str(z)]["obj"]["uv_intrinsic"] = (b_c, obj_cum_int)
+    density[str(z)]["obj"]["uv_attenuated"] = (b_c, obj_cum_dust)
 
-    density["obj"]["bolometric"] = np.append(density["obj"]["bolometric"], lum_density(b_c2, phi_bolometric))
-    density["obj"]["uv_intrinsic"] = np.append(density["obj"]["uv_intrinsic"], lum_density(b_c, phi_intrinsic))
-    density["obj"]["uv_attenuated"] = np.append(density["obj"]["uv_attenuated"], lum_density(b_c, phi_dusty))
+    density[str(z)]["agn"]["bolometric"] = (b_c2, agn_cum_bol)
+    density[str(z)]["agn"]["uv_intrinsic"] = (b_c, agn_cum_int)
+    density[str(z)]["agn"]["uv_attenuated"] = (b_c, agn_cum_dust)
 
-    density["agn"]["bolometric"] = np.append(density["agn"]["bolometric"], lum_density(b_c2, phi_agn_bolometric))
-    density["agn"]["uv_intrinsic"] = np.append(density["agn"]["uv_intrinsic"], lum_density(b_c, phi_agn_intrinsic))
-    density["agn"]["uv_attenuated"] = np.append(density["agn"]["uv_attenuated"], lum_density(b_c, phi_agn_dusty))
-
-    density["gal"]["bolometric"] = np.append(density["gal"]["bolometric"], lum_density(b_c2, phi_gal_bolometric))
-    density["gal"]["uv_intrinsic"] = np.append(density["gal"]["uv_intrinsic"], lum_density(b_c, phi_gal_intrinsic))
-    density["gal"]["uv_attenuated"] = np.append(density["gal"]["uv_attenuated"], lum_density(b_c, phi_gal_dusty))
+    density[str(z)]["gal"]["bolometric"] = (b_c2, gal_cum_bol)
+    density[str(z)]["gal"]["uv_intrinsic"] = (b_c, gal_cum_int)
+    density[str(z)]["gal"]["uv_attenuated"] = (b_c, gal_cum_dust)
 
 fig = plt.figure(figsize=(3,3))
 ax1 = fig.add_axes( [0., 0., 1., 1.] )
-ax1.plot(np.flip(fl.zeds), np.log10(density["gal"]["uv_intrinsic"]), 'k-', label=fr"Stellar, intrinsic")
-ax1.plot(np.flip(fl.zeds), np.log10(density["gal"]["uv_attenuated"]), 'k-.', label=fr"Stellar, dusty")
-ax1.plot(np.flip(fl.zeds), np.log10(density["agn"]["uv_intrinsic"]), 'k--', label=fr"AGN, intrinsic")
-ax1.plot(np.flip(fl.zeds), np.log10(density["agn"]["uv_attenuated"]), 'k:', label=fr"AGN, dusty")
+ax1.plot(density["5.0"]["obj"]["bolometric"][0], density["5.0"]["obj"]["bolometric"][1], 'k-', label=fr"Stellar+AGN, bolometric")
+ax1.plot(density["5.0"]["gal"]["bolometric"][0], density["5.0"]["gal"]["bolometric"][1], 'k--', label=fr"Stellar, bolometric")
+ax1.plot(density["5.0"]["agn"]["bolometric"][0], density["5.0"]["agn"]["bolometric"][1], 'k:', label=fr"AGN, bolometric")
+ax1.set_xlim(bol_lim, 46)
 ax1.legend(loc="best")
-ax1.set_xlabel(r"$\rm z$")
-ax1.set_ylabel(r"$\rm log_{10}[\rho_{UV} \, / \, erg \, s^{-1}\, Hz^{-1} \, Mpc^{-3}]$")
+ax1.set_xlabel(r"$\rm log_{10}[L_{bol} \, / \, erg \, s^{-1}]$")
+ax1.set_ylabel(fr"$\rm f(L_{{bol}} \, / \, 10^{{{bol_lim:.0f}}} \, erg \, s^{{-1}} )$")
 
-plt.savefig('figures/lum_density.pdf', bbox_inches='tight')
+plt.savefig('figures/lum_cumulative_bolometric.pdf', bbox_inches='tight')
