@@ -333,7 +333,7 @@ fig.text(0.01, 0.55, r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\; mag^{-1}]$', ha = 'left
 fig.text(0.45,0.05, r'$\rm M_{FUV}$', ha = 'center', va = 'bottom', fontsize=10)
 
 fig.text(0.9, 0.55, r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\; erg^{-1} \; s \; Hz]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
-fig.text(0.45,0.96, r'$\rm log_{10}[L \; / \; erg \; s^{-1}]$', ha = 'center', va = 'bottom', fontsize=10)
+fig.text(0.45,0.96, r'$\rm log_{10}[L \; / \; erg \; s^{-1}\; Hz^{-1}]$', ha = 'center', va = 'bottom', fontsize=10)
 
 fig.savefig(f'figures/uvlf__agn_dust__intrinsic_comparisons_grid_both.pdf', bbox_inches='tight')
 fig.clf()
