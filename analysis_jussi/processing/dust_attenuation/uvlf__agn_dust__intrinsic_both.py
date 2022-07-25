@@ -255,6 +255,15 @@ for i, tag in enumerate(np.flip(fl.tags)):
         axes.flatten()[i].scatter(literature['Ono+2018']['Galaxy+AGN']['z5']['M'],
                                   np.log10(literature['Ono+2018']['Galaxy+AGN']['z5']['phi']), s=5, marker='o', c='forestgreen')
 
+        for jj in range(len(literature['Adams+2022']['Galaxy+AGN']['z5']['M'])):
+            M_ = [literature['Adams+2022']['Galaxy+AGN']['z5']['M'][jj], literature['Adams+2022']['Galaxy+AGN']['z5']['M'][jj]]
+            err = [np.log10(literature['Adams+2022']['Galaxy+AGN']['z5']['phi_lo'][jj]),
+                   np.log10(literature['Adams+2022']['Galaxy+AGN']['z5']['phi_hi'][jj])]
+            axes.flatten()[i].plot(M_, err, lw=1, ls='-', c='coral', alpha=0.8)
+
+        axes.flatten()[i].scatter(literature['Adams+2022']['Galaxy+AGN']['z5']['M'],
+                                  np.log10(literature['Adams+2022']['Galaxy+AGN']['z5']['phi']), s=5, marker='s', c='coral')
+
     if z == 6.0:
         for jj in range(len(literature['Harikane+2021']['Galaxy+AGN']['z6']['M'])):
             M_ = [literature['Harikane+2021']['Galaxy+AGN']['z6']['M'][jj], literature['Harikane+2021']['Galaxy+AGN']['z6']['M'][jj]]
@@ -315,9 +324,10 @@ for i, tag in enumerate(np.flip(fl.tags)):
     if i != 2 and i != 5:
         secax_y.yaxis.set_ticklabels([])
 
-axes.flatten()[0].errorbar(-99, -99, 1, ms=2, marker='v', ls='none', c='black', mew=2, label='Harikane+21')
+axes.flatten()[0].errorbar(-99, -99, 1, ms=2, marker='o', ls='none', c='forestgreen', mew=2, label='Ono+18')
 axes.flatten()[1].errorbar(-99, -99, 1, ms=2, marker='^', ls='none', c='purple', mew=2, label='Niida+20')
-axes.flatten()[2].errorbar(-99, -99, 1, ms=2, marker='o', ls='none', c='forestgreen', mew=2, label='Ono+18')
+axes.flatten()[2].errorbar(-99, -99, 1, ms=2, marker='v', ls='none', c='black', mew=2, label='Harikane+21')
+axes.flatten()[3].errorbar(-99, -99, 1, ms=2, marker='s', ls='none', c='coral', mew=2, label='Adams+22')
 
 axes.flatten()[5].plot(-99, -99, ls='-', c='k', alpha=0.6, label=rf'Stellar')
 axes.flatten()[5].plot(-99, -99, ls='--', c='k', alpha=0.6, label=rf'$\rm AGN_{{intrinsic}}$')
@@ -327,6 +337,7 @@ axes.flatten()[5].fill_between([-99, -90], [-99, -99], [-90, -90], color='k', al
 axes.flatten()[0].legend(loc='upper left', prop={'size': 6})
 axes.flatten()[1].legend(loc='upper left', prop={'size': 6})
 axes.flatten()[2].legend(loc='upper left', prop={'size': 6})
+axes.flatten()[3].legend(loc='upper left', prop={'size': 6})
 axes.flatten()[5].legend(loc='upper left', prop={'size': 6})
 
 fig.text(0.01, 0.55, r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\; mag^{-1}]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)

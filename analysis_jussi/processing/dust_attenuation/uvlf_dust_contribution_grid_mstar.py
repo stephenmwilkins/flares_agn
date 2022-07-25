@@ -63,10 +63,10 @@ tags = fl.tags #This would be z=5
 
 MBH = fl.load_dataset('BH_Mass', arr_type='Galaxy') # Black hole mass of galaxy
 MDOT = fl.load_dataset('BH_Mdot', arr_type='Galaxy') # Black hole accretion rate
-MS = fl.load_dataset('Mstar_30', arr_type='Galaxy') # Black hole accretion rate
+MS = fl.load_dataset('Mstar', arr_type='Galaxy') # Black hole accretion rate
 LFUV = fl.load_dataset('FUV', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity/DustModelI/')
 LBOL = fl.load_dataset('DustModelI', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Indices/Lbol/')
-BHLOS = fl.load_dataset('BH_los', arr_type='Galaxy')
+BHLOS = pickle.load(open(f'{flares_dir}/bh_los.p', 'rb')) #fl.load_dataset('BH_los', arr_type='Galaxy')
 DTM = fl.load_dataset('DTM', arr_type='Galaxy')
 
 #LUM = fl.load_dataset('DustModelI', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity')
@@ -101,10 +101,7 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
 
     # converting MBHacc units to M_sol/yr
-    x *= h * 6.445909132449984E23  # g/s
-    x = x/constants.M_sun.to('g').value  # convert to M_sol/s
-    x *= units.yr.to('s')  # convert to M_sol/yr
-
+    x *= h
 
     y *= 10**10
 
@@ -150,7 +147,7 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
     s_outshine = (y > 0)
 
-    print(np.sum(s_outshine))
+    print(z, np.sum(s_outshine))
 
     axes.flatten()[i].scatter(mstar[s_t][s_outshine], y[s_outshine], s=5, color=cmap(norm(z)))
 
