@@ -282,18 +282,19 @@ for j, mass_cut in enumerate(masslimits):
     ax1.plot(np.flip(fl.zeds), np.log10(density["agn"]["uv_attenuated"][label]), ':',
              color=cmap_mass(norm_mass(mass_cut)), alpha=0.8)
 
-ax1.plot([-99, -99], [-99, -99], 'k-', alpha=0.7, label="Stellar, intrinsic")
-ax1.plot([-99, -99], [-99, -99], 'k-.', alpha=0.7, label="Stellar, dusty")
-ax1.plot([-99, -99], [-99, -99], 'k--', alpha=0.7, label="AGN, intrinsic")
-ax1.plot([-99, -99], [-99, -99], 'k:', alpha=0.7, label="AGN, dusty")
+ax1.plot([-99, -99], [-99, -99], 'k-', linewidth=1, alpha=0.7, label="Stellar, intrinsic")
+ax1.plot([-99, -99], [-99, -99], 'k-.', linewidth=1, alpha=0.7, label="Stellar, dusty")
+ax1.plot([-99, -99], [-99, -99], 'k--', linewidth=1, alpha=0.7, label="AGN, intrinsic")
+ax1.plot([-99, -99], [-99, -99], 'k:', linewidth=1, alpha=0.7, label="AGN, dusty")
 for label, mass_cut in zip(masslabels, masslimits):
-    ax1.plot([-99, -99], [-99, -99], color=cmap_mass(norm_mass(mass_cut)), ls='-', alpha=1, label=fr"$\rm {label} $")
+    ax1.plot([-99, -99], [-99, -99], linewidth=1, color=cmap_mass(norm_mass(mass_cut)), ls='-', alpha=1, label=fr"$\rm {label} $")
 
 
 ax1.set_xlim(5, 10)
-ax1.set_ylim(22, 27.7)
+ax1.set_ylim(22, 26.4)
+ax1.set_yticks([22, 23, 24, 25, 26])
 
-ax1.legend(loc="best")
+ax1.legend(loc="upper right", prop={'size': 6})
 ax1.set_xlabel(r"$\rm z$")
 ax1.set_ylabel(r"$\rm log_{10}[\rho_{UV} \, / \, erg \, s^{-1}\, Hz^{-1} \, Mpc^{-3}]$")
 
