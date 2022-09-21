@@ -1,18 +1,8 @@
 import numpy as np
-import pandas as pd
-
 import matplotlib as mpl
 import matplotlib.cm as cm
 mpl.use('Agg')
 import matplotlib.pyplot as plt
-
-import flares
-
-import astropy.constants as constants
-import astropy.units as units
-
-import FLARE.photom as photom
-import FLARE.plt as fplt
 
 
 cmap = mpl.cm.viridis
@@ -21,7 +11,6 @@ norm = mpl.colors.Normalize(vmin = np.log10(1e4), vmax = np.log10(1.5e6))
 output_dir = '../cloudy/output/linear'
 
 AGN_T = np.linspace(10000, 1.5e6, 100)  # range of AGN temperatures to model
-
 
 fig = plt.figure(figsize=(3,3))
 left  = 0.1

@@ -142,12 +142,12 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
     '''
     axes.flatten()[i].plot(bincen, out[:, 1], c=cmap(norm(z)), ls=':')
-    axes.flatten()[i].plot(bincen[Ns], out[:, 1][Ns], c=cmap(norm(z)), ls='-')
+    axes.flatten()[i].plot(bincen[Ns], out[:, 1][Ns], c=cmap(norm(z)), ls='--')
     axes.flatten()[i].fill_between(bincen[Ns], out[:, 0][Ns], out[:, 2][Ns], color=cmap(norm(z)),
                                    alpha=0.4)
 
     axes.flatten()[i].plot(bincen, out2[:, 1], c=cmap(norm(z)), ls=':')
-    axes.flatten()[i].plot(bincen[Ns], out2[:, 1][Ns], c=cmap(norm(z)), ls='--')
+    axes.flatten()[i].plot(bincen[Ns], out2[:, 1][Ns], c=cmap(norm(z)), ls='-')
     axes.flatten()[i].fill_between(bincen[Ns], out2[:, 0][Ns], out2[:, 2][Ns], color=cmap(norm(z)),
                                    alpha=0.4)
 
@@ -160,11 +160,11 @@ for i, tag in enumerate(np.flip(fl.tags)):
     axes.flatten()[i].text(0.8, 0.9, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
                            color=cmap(norm(z)), ha='left')
 
-axes.flatten()[i].plot(-99, -99, color='k', ls='-', label='AGN', alpha=0.8)
-axes.flatten()[i].plot(-99, -99, color='k', ls='--', label='Stellar', alpha=0.8)
+axes.flatten()[i].plot(-99, -99, color='k', ls='-', label='Stellar', alpha=0.8)
+axes.flatten()[i].plot(-99, -99, color='k', ls='--', label='AGN', alpha=0.8)
 axes.flatten()[i].legend(loc='center right')
 
-fig.text(0.01, 0.55, r'$\rm log_{10}[L_{FUV} \; / \; L_{bol}]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
+fig.text(0.01, 0.55, r'$\rm L_{FUV} \; / \; L_{bol}$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
 fig.text(0.45,0.05, r'$\rm log_{10}[M_{*}\;/\;M_{\odot}]$', ha = 'center', va = 'bottom', fontsize=10)
 
 fig.savefig(f'figures/fuv_to_bol__mstar__grid_newfile.pdf', bbox_inches='tight')
