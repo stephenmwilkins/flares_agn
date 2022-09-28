@@ -25,7 +25,7 @@ tags = fl.tags  #This would be z=5
 
 
 MBH = fl.load_dataset('BH_Mass', arr_type='Galaxy') # Black hole mass of galaxy
-MS = fl.load_dataset('Mstar_30', arr_type='Galaxy') # Black hole accretion rate
+MS = fl.load_dataset('Mstar', arr_type='Galaxy') # Black hole accretion rate
 
 X = MBH
 
@@ -75,5 +75,5 @@ ax.set_ylim(-7.5,-3)
 
 ax.set_xlabel(r'$\rm log_{10}[M_{BH}\;/\;M_{\odot}]$')
 ax.set_ylabel(r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\, dex^{-1}]$')
-fig.savefig(f'figures/MBH_DF_smbh_hosts.pdf', bbox_inches='tight')
+fig.savefig(f'figures/MBH_DF.pdf', bbox_inches='tight')
 fig.clf()
