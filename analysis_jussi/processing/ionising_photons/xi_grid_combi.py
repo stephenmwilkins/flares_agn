@@ -97,10 +97,7 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
 
     # converting MBHacc units to M_sol/yr
-    x *= h * 6.445909132449984E23  # g/s
-    x = x/constants.M_sun.to('g').value  # convert to M_sol/s
-    x *= units.yr.to('s')  # convert to M_sol/yr
-
+    x *= h
 
     y *= 10**10
     b = t_bb(y, x)
@@ -127,6 +124,11 @@ for i, tag in enumerate(np.flip(fl.tags)):
     out = flares.binned_weighted_quantile(x, y, ws, bins, quantiles)
 
     out2 = flares.binned_weighted_quantile(x, xi, ws, bins, quantiles)
+
+    s_stars = x > 8.5
+    print(z)
+    print(np.mean(y[s_stars]))
+    print(np.mean(xi[s_stars]))
 
     # --- plot the median and quantiles for bins with >10 galaxies
 
@@ -168,9 +170,9 @@ axes.flatten()[i].plot(-99, -99, color='k', ls='-', label='AGN', alpha=0.8)
 axes.flatten()[i].plot(-99, -99, color='k', ls='--', label='Stellar', alpha=0.8)
 axes.flatten()[i].legend(loc='lower right')
 
-fig.text(0.01, 0.55, r'$\rm log_{10}[\xi_{ion, AGN} \; / \; erg^{-1}\; Hz]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
+fig.text(0.01, 0.55, r'$\rm log_{10}[\xi_{ion} \; / \; erg^{-1}\; Hz]$', ha = 'left', va = 'center', rotation = 'vertical', fontsize=10)
 fig.text(0.45,0.05, r'$\rm log_{10}[M_{*}\;/\;M_{\odot}]$', ha = 'center', va = 'bottom', fontsize=10)
 
-fig.savefig(f'figures/xi_grid_newmaster.pdf', bbox_inches='tight')
+fig.savefig(f'figures/xi_grid_newmaster_2.pdf', bbox_inches='tight')
 fig.clf()
 

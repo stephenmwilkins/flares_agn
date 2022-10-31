@@ -189,5 +189,5 @@ fig.text(0.01, 0.55, r'$\rm log_{10}[L_{AGN, FUV} \; / \; L_{stellar, FUV}]$', h
 fig.text(0.45, 0.05, r'$\rm log_{10}[M_{*}\;/\;M_{\odot}]$', ha='center', va='bottom',
          fontsize=10)
 
-fig.savefig(f'figures/agn_intrinsic_dust_stellar_dust_frac_grid_mstar_coarse.pdf', bbox_inches='tight')
+#fig.savefig(f'figures/agn_intrinsic_dust_stellar_dust_frac_grid_mstar_coarse.pdf', bbox_inches='tight')
 fig.clf()

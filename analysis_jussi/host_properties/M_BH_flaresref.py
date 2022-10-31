@@ -70,7 +70,7 @@ X = Mdot
 df = pd.read_csv(f'{flares_dir}/weights_grid.txt')
 weights = np.array(df['weights'])
 
-fig = plt.figure(figsize=(3,3))
+fig = plt.figure(figsize=(2,2))
 ax1 = fig.add_axes( [0., 0., 1., 1.] )
 
 m_bh = np.linspace(5., 10, 100)

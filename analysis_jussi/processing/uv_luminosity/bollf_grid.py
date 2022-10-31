@@ -23,8 +23,8 @@ from scipy.interpolate import interp1d
 
 import _pickle as pickle
 
-tempratio = pickle.load(open('tempratio.p', 'rb'))
-ratio_from_t = interp1d(tempratio['AGN_T'], tempratio['ratio'])
+bol_correction = pickle.load(open('bolometric_correction.p', 'rb'))
+ratio_from_t = interp1d(bol_correction['AGN_T'], bol_correction['ratio']['FUV'])
 
 
 mass_cut = 5.
@@ -74,7 +74,7 @@ tags = fl.tags #This would be z=5
 
 MBH = fl.load_dataset('BH_Mass', arr_type='Galaxy') # Black hole mass of galaxy
 MDOT = fl.load_dataset('BH_Mdot', arr_type='Galaxy') # Black hole accretion rate
-MS = fl.load_dataset('Mstar_30', arr_type='Galaxy') # Black hole accretion rate
+MS = fl.load_dataset('Mstar', arr_type='Galaxy') # Black hole accretion rate
 LBOL = fl.load_dataset('Intrinsic', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Indices/Lbol/')
 
 #LUM = fl.load_dataset('DustModelI', arr_type=f'Galaxy/BPASS_2.2.1/Chabrier300/Luminosity')
@@ -105,9 +105,7 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
 
     # converting MBHacc units to M_sol/yr
-    x *= h * 6.445909132449984E23  # g/s
-    x = x/constants.M_sun.to('g').value  # convert to M_sol/s
-    x *= units.yr.to('s')  # convert to M_sol/yr
+    x *= h
 
 
     y *= 10**10
@@ -140,18 +138,27 @@ for i, tag in enumerate(np.flip(fl.tags)):
 
 
 
-    print(f'MAX L_bol corresponds to log10L_uv = {np.log10((ratio_from_t(b[s_t]))*10**np.max(q))}')
+    #print(f'MAX L_bol corresponds to log10L_uv = {np.log10((ratio_from_t(b[s_t]))*10**np.max(q))}')
 
 
     binw = 0.5
     bins = np.arange(42,47,binw)
     b_c = bins[:-1]+binw/2
 
+    N = np.histogram(yy, bins=bins)
+    Ngal = np.histogram(lstar[s_t], bins=bins)
+
     N_weighted_total, edges_total = np.histogram(yy, bins=bins, weights=ws)
 
     N_weighted_gal, edges_gal = np.histogram(lstar[s_t], bins = bins, weights = ws)
 
     N_weighted, edges = np.histogram(y, bins = bins, weights = ws)
+
+    print(yy[yy>46])
+    print(N)
+    print(Ngal)
+    print(np.log10(N_weighted_total/N_weighted_gal))
+
 
     h = 0.6777
     vol = (4/3)*np.pi*(14/h)**3

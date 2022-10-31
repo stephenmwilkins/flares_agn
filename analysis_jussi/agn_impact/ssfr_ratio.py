@@ -71,6 +71,15 @@ for ii, tag in enumerate(tags):
     x2 = np.log10(fl_03_AGN[tag]['Galaxy']['Mstar_30']) + 10
     y2 = np.log10(fl_03_AGN[tag]['Galaxy']['SFR_inst_30'])
     y2 = y2 - x2 + 9
+
+    x11 = np.log10(fl_24_noAGN[tag]['Galaxy']['Mstar_30'])+10
+    y11 = np.log10(fl_24_noAGN[tag]['Galaxy']['SFR_inst_30'])
+    y11 = y11 - x11 + 9
+
+
+    x22 = np.log10(fl_24_AGN[tag]['Galaxy']['Mstar_30']) + 10
+    y22 = np.log10(fl_24_AGN[tag]['Galaxy']['SFR_inst_30'])
+    y22 = y22 - x22 + 9
     #axes.flatten()[ii].scatter(np.log10(run[tag]['Galaxy']['Mstar_30'])+10,
     #                        np.log10(run[tag]['Galaxy']['SFR_inst_30']), c='k', alpha=0.6)
 
@@ -81,6 +90,9 @@ for ii, tag in enumerate(tags):
     out1 = flares.binned_weighted_quantile(x1, y1, weights=np.ones(len(x1)), bins=bins, quantiles=quantiles)
     out2 = flares.binned_weighted_quantile(x2, y2, weights=np.ones(len(x2)), bins=bins, quantiles=quantiles)
 
+    out11 = flares.binned_weighted_quantile(x11, y11, weights=np.ones(len(x11)), bins=bins, quantiles=quantiles)
+    out22 = flares.binned_weighted_quantile(x22, y22, weights=np.ones(len(x22)), bins=bins, quantiles=quantiles)
+
     # --- plot the median and quantiles for bins with >10 galaxies
 
     N, bin_edges = np.histogram(x1, bins=bins)
@@ -89,10 +101,17 @@ for ii, tag in enumerate(tags):
     N2, bin_edges = np.histogram(x2, bins=bins)
     Ns2 = (N2 >= 10)
 
+    N11, bin_edges = np.histogram(x11, bins=bins)
+    Ns11 = (N11 >= 10)
+
+    N22, bin_edges = np.histogram(x22, bins=bins)
+    Ns22 = (N22 >= 10)
+
     axes.flatten()[ii].axhline(0, c='k', ls='--', alpha=0.5)
 
     #axes.flatten()[ii].plot(bincen, out1[:, 1]/out2[:, 1], c=cmap(norm(zed)), ls=':')
     axes.flatten()[ii].plot(bincen, np.log10(out1[:, 1]/out2[:, 1]), c=cmap(norm(zed)), ls='-')
+    axes.flatten()[ii].plot(bincen, np.log10(out11[:, 1] / out22[:, 1]), c=cmap(norm(zed)), ls=':')
     #axes.flatten()[ii].fill_between(bincen, np.log10(out1[:, 0]/out2[:, 0]), np.log10(out1[:, 2]/out2[:, 2]), color=cmap(norm(zed)), alpha=0.2)
 
     '''
@@ -107,6 +126,10 @@ for ii, tag in enumerate(tags):
     axes.flatten()[ii].text(0.1, 0.9, r'$\rm z={0:.0f}$'.format(zed), fontsize=8,
                            transform=axes.flatten()[ii].transAxes,
                            color=cmap(norm(zed)))
+
+axes.flatten()[-1].plot(-99, -99, 'k-', label="Region 03", alpha=0.8)
+axes.flatten()[-1].plot(-99, -99, 'k:', label="Region 24", alpha=0.8)
+axes.flatten()[-1].legend(loc="best", fontsize=8)
 
 fig.text(0.01, 0.55, r'$\rm log_{10}[sSFR_{no-AGN} \; / \; sSFR_{AGN}]$', ha='left', va='center',
          rotation='vertical', fontsize=10)

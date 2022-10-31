@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 
+import cmasher as cmr
 import matplotlib as mpl
 import matplotlib.cm as cm
 mpl.use('Agg')
@@ -66,19 +67,19 @@ X = MDOT
 df = pd.read_csv(f'{flares_dir}/weights_grid.txt')
 weights = np.array(df['weights'])
 
+fig = plt.figure(figsize=(3, 3))
+left = 0.2
+bottom = 0.2
+width = 0.75
+height = 0.75
+ax = fig.add_axes((left, bottom, width, height))
+
+ws, x, y, mstar, lstar = np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
 
 for i, tag in enumerate(np.flip(fl.tags)):
 
-    fig = plt.figure(figsize=(3, 3))
-    left = 0.2
-    bottom = 0.2
-    width = 0.75
-    height = 0.75
-    ax = fig.add_axes((left, bottom, width, height))
-
-
     z = np.flip(fl.zeds)[i]
-    ws, x, y, mstar, lstar = np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
+
     for ii in range(len(halo)):
         s = (np.log10(MS[halo[ii]][tag])+10 > 8)
         ws = np.append(ws, np.ones(np.shape(X[halo[ii]][tag][s]))*weights[ii])
@@ -87,45 +88,41 @@ for i, tag in enumerate(np.flip(fl.tags)):
         mstar = np.append(mstar, np.log10(MS[halo[ii]][tag][s])+10)
         lstar = np.append(lstar, np.log10(LFUV[halo[ii]][tag][s]))
 
-    h = 0.6777  # Hubble parameter
+h = 0.6777  # Hubble parameter
 
-    print(f'N_obj = {len(x)}')
+# converting MBHacc units to M_sol/yr
+x *= h
 
-    # converting MBHacc units to M_sol/yr
-    x *= h
+y *= 10**10
 
+y = np.log10(y)
+b = np.array([l_agn(q) for q in x])
 
-    y *= 10**10
-    yy = 10**np.linspace(5.5, 10, 100)
-    xx = l_edd(yy)
-    yy = np.log10(yy)
-    y = np.log10(y)
-    b = np.array([l_agn(q) for q in x])
+x = b
 
-    x=b
+yy = 10**np.linspace(5.5, 10, 100)
+xx = l_edd(yy)
+yy = np.log10(yy)
 
-    cmap2d = plt.cm.Blues
-    norm2d = mpl.colors.LogNorm(vmax=100)
+cmap2d = plt.cm.Blues #arctic_r
+norm2d = mpl.colors.LogNorm(vmax=100)
 
-    cmapper = ax.hexbin(x, y, cmap=cmap2d, gridsize=(32,12), extent=[39, 47, 5.5, 9.5], edgecolor='none', linewidths=0.2, norm=norm2d) # weights=ws,
-    ax.plot(xx, yy, c='k', linewidth=1, ls='--', alpha=0.8)
+cmapper = ax.hexbin(x, y, cmap=cmap2d, gridsize=(32,12), extent=[39, 47, 5.5, 9.5], edgecolor='none', linewidths=0.2, norm=norm2d) # weights=ws,
+ax.plot(xx, yy, c='k', linewidth=1, ls='--', alpha=0.8)
 
-    ax.text(0.7, 0.9, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=ax.transAxes,
-                           color=cmap(norm(z)))
+cax = fig.add_axes([width + left, bottom, 0.05, height])
+bar = fig.colorbar(cmapper, cax=cax, orientation='vertical')
+cax.set_yticklabels([0, 1, 2])
+cax.set_ylabel(r'$\rm log_{10}[N]$')
 
-    cax = fig.add_axes([width + left, bottom, 0.05, height])
-    bar = fig.colorbar(cmapper, cax=cax, orientation='vertical')
-    cax.set_yticklabels([0, 1, 2])
-    cax.set_ylabel(r'$\rm log_{10}[N]$')
+ax.set_ylim(5.5, 9)
+ax.set_xlim(42.7, 47)
 
-    ax.set_ylim(5.5, 9)
-    ax.set_xlim(42.7, 47)
+ax.set_xlabel(r'$\rm log_{10}[L_{AGN, bol}\;/\;erg\,s^{-1}]$')
+ax.set_ylabel(r'$\rm log_{10}[M_{BH}\;/\;M_{\odot}]$')
 
-    ax.set_xlabel(r'$\rm log_{10}[L_{AGN, bol}\;/\;erg\,s^{-1}]$')
-    ax.set_ylabel(r'$\rm log_{10}[M_{BH}\;/\;M_{\odot}]$')
+#ax.legend(loc='lower left', prop={'size': 6})
 
-    #ax.legend(loc='lower left', prop={'size': 6})
-
-    fig.savefig(f'figures/mbh_lagn/individual/mbh_lagn_2d_{int(z)}_logmap.pdf', bbox_inches='tight')
-    fig.clf()
+fig.savefig(f'figures/mbh_lagn/mbh_lagn_2d_all.pdf', bbox_inches='tight')
+fig.clf()
 

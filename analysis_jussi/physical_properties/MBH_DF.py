@@ -41,8 +41,8 @@ height = 0.75
 ax = fig.add_axes((left, bottom, width, height))
 
 
-for i, tag in enumerate(fl.tags):
-    z = fl.zeds[i]
+for i, tag in enumerate(fl.tags[::-1]):
+    z = fl.zeds[::-1][i]
 
     weights = np.array(df['weights'])
     ws, x = np.array([]), np.array([])
@@ -71,7 +71,7 @@ for i, tag in enumerate(fl.tags):
 ax.legend(prop={'size': 6})
 
 ax.set_xlim(5.5, 9.5)
-ax.set_ylim(-7.5,-3)
+ax.set_ylim(-7.5,-3.5)
 
 ax.set_xlabel(r'$\rm log_{10}[M_{BH}\;/\;M_{\odot}]$')
 ax.set_ylabel(r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\, dex^{-1}]$')

@@ -244,11 +244,18 @@ for i, tag in enumerate(np.flip(fl.tags)):
     density["gal"]["uv_attenuated"] = np.append(density["gal"]["uv_attenuated"], lum_density(b_c, phi_gal_dusty))
     density["gal"]["ionising"] = np.append(density["gal"]["ionising"], lum_density(b_c3, phi_gal_ion))
 
+    print(z)
+    print(np.log10(lum_density(b_c3, phi_agn_ion)))
+    print(np.log10(lum_density(b_c3, phi_gal_ion)))
+    print(np.log10(lum_density(b_c3, phi_ion)))
+
 fig = plt.figure(figsize=(3,3))
 ax1 = fig.add_axes( [0., 0., 1., 1.] )
 ax1.plot(np.flip(fl.zeds), np.log10(density["obj"]["ionising"]), 'k-', label=fr"Stellar+AGN")
 ax1.plot(np.flip(fl.zeds), np.log10(density["agn"]["ionising"]), 'k--', label=fr"AGN")
 ax1.plot(np.flip(fl.zeds), np.log10(density["gal"]["ionising"]), 'k:', label=fr"Stellar")
+
+ax1.set_yticks([39, 39.5, 40, 40.5, 41])
 ax1.legend(loc="best")
 ax1.set_xlabel(r"$\rm z$")
 ax1.set_ylabel(r"$\rm log_{10}[\rho_{ion} \, / \, erg \, s^{-1}\, Hz^{-1} \, Mpc^{-3}]$")

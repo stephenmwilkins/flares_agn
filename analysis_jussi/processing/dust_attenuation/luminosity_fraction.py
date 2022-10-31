@@ -250,6 +250,12 @@ for key in output.keys():
         ax1.plot(output[key][str(z)][0][Ns], output[key][str(z)][1][:, 1][Ns], color=cmap(norm(z)), label=fr"$\rm z = {z:.0f}$")
         ax1.fill_between(output[key][str(z)][0][Ns], output[key][str(z)][1][:, 0][Ns], output[key][str(z)][1][:, 2][Ns], color=cmap(norm(z)), alpha=0.15)
         #ax1.scatter(output[key][str(z)][2], output[key][str(z)][3], color=cmap(norm(z)))
+        print(z, key)
+        print(10**output[key][str(z)][1][:, 1][Ns])
+        print("max = ", max(10**output[key][str(z)][1][:, 1][Ns]))
+        print("mean = ", np.mean(10**output[key][str(z)][1][:, 1][Ns]))
+        s_lion = output[key][str(z)][0][Ns] > 42.8
+        print("mean L_ion > 43", np.mean(10**output[key][str(z)][1][:, 1][Ns][s_lion]))
 
     if key == "bolometric":
         ax1.set_xlabel(r"$\rm log_{10}[L^{*}_{bol} \, / \, erg \, s^{-1}]$")

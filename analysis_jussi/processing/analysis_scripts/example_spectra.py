@@ -26,6 +26,9 @@ for i in range(len(T_AGN)):
     # Plotting total spectrum for each temperature
     ax.plot(np.log10(lam), np.log10(hf['total'][i][()]), c = cmap(norm(np.log10(T_AGN[i]))))
 
+ax.axvline(np.log10(1500), c='k', ls='--')
+ax.axvline(np.log10(2500), c='k', ls='--')
+
 cmapper = cm.ScalarMappable(norm=norm, cmap=cmap)
 cmapper.set_array([])
 
@@ -35,10 +38,10 @@ bar.set_ticks([4, 5, 6])
 cax.set_ylabel(r'$\rm log_{10}[T_{AGN} \; /\; K]$')
 
 
-ax.set_ylim(35, 45)
-ax.set_xlim(-2, 7)
+ax.set_ylim(40, 44)
+ax.set_xlim(3, 3.6)
 
 ax.set_ylabel(r"$\rm log_{10}[\lambda F_{\lambda} \; / \; erg \;s^{-1}]$")
 ax.set_xlabel(r"$\rm log_{10}[\lambda \; / \; \AA]$")
 
-fig.savefig(f'figures/total.pdf', bbox_inches='tight')
+fig.savefig(f'figures/total_test.pdf', bbox_inches='tight')

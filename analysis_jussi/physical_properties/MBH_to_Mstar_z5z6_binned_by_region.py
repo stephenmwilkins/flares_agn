@@ -42,21 +42,20 @@ print(min(np.array(df['weights'])), max(np.array(df['weights'])))
 #bin_edges = [(-0.3, -0.15), (-0.15, -0.04), (-0.04, 0.04), (0.04, 0.12), (0.12, 0.22), (0.22, 0.3)]
 bin_edges = [(-0.04, 0.04), (0.04, 0.12), (0.12, 0.22), (0.22, 0.3)]
 
-for i, tag in enumerate(fl.tags):
-    z = fl.zeds[i]
+left, bottom, top, right = 0.07, 0.15, 1.0, 0.85
 
-    fig = plt.figure(figsize=(3, 3))
-    left = 0.2
-    bottom = 0.2
-    width = 0.75
-    height = 0.75
-    ax = fig.add_axes((left, bottom, width, height))
+fig, axes = plt.subplots(2, 2, figsize = (5, 4), sharex = True)
+fig.subplots_adjust(left=left, bottom=bottom, top=top, right=right, wspace=0.0, hspace=0.0)
+
+for i, tag in enumerate(fl.tags[::-1][:2]):
+    z = fl.zeds[::-1][i]
 
     weights = np.array(df['weights'])
 
     binw = 0.5
     bins = np.arange(5,10,binw)
     b_c = bins[:-1]+binw/2
+    quantiles = [0.84, 0.50, 0.16]
 
     vol = h = 0.6777
     vol = (4 / 3) * np.pi * (14 / h) ** 3
@@ -65,6 +64,7 @@ for i, tag in enumerate(fl.tags):
     cmap_tickpos = []
 
     for bin_number in bounds[:-1]:
+        ms = np.array([])
         x = np.array([])
         ws = np.array([])
 
@@ -76,11 +76,16 @@ for i, tag in enumerate(fl.tags):
                 s = (np.log10(MS[halo[ii]][tag]) + 10 > 8)&(np.log10(X[halo[ii]][tag])+10 > 5.5)
                 ws = np.append(ws, np.ones(np.shape(X[halo[ii]][tag][s]))*weights[ii])
                 x = np.append(x, np.log10(X[halo[ii]][tag][s]))
+                ms = np.append(ms, np.log10(MS[halo[ii]][tag][s]))
                 count +=1
 
         x += 10 # units are 1E10 M_sol
+        ms += 10
 
         N_weighted, edges = np.histogram(x, bins = bins)#, weights = ws)
+        Ns = N_weighted > 5
+
+        out = flares.binned_weighted_quantile(x, np.log10(10**x/10**ms), ws, bins, quantiles)
 
         err = np.sqrt(N_weighted)/(binw*vol*count)
 
@@ -91,29 +96,48 @@ for i, tag in enumerate(fl.tags):
             print(phi)
             print(err)
 
-        ax.plot(bins[:-1] + binw / 2, np.log10(phi), c=cmap(norm(bin_number+0.5)), alpha=0.8)
+        axes.flatten()[i].plot(bins[:-1] + binw / 2, np.log10(phi), c=cmap(norm(bin_number+0.5)), alpha=0.8)
         for j, bin in enumerate(N_weighted):
-            ax.plot([bins[:-1][j] + binw / 2, bins[:-1][j] + binw / 2], [np.log10(phi[j]-err[j]), np.log10(phi[j]+err[j])], c=cmap(norm(bin_number+0.5)), alpha=0.8)
+            axes.flatten()[i].plot([bins[:-1][j] + binw / 2, bins[:-1][j] + binw / 2], [np.log10(phi[j]-err[j]), np.log10(phi[j]+err[j])], c=cmap(norm(bin_number+0.5)), alpha=0.8)
+
+        axes.flatten()[i+2].plot(b_c, out[:, 1], c=cmap(norm(bin_number+0.5)), ls='-')
+        #axes.flatten()[i+2].plot(b_c[Ns], out[:, 1][Ns], c=cmap(norm(bin_number+0.5)), ls='-')
+        axes.flatten()[i+2].fill_between(b_c[Ns], out[:, 0][Ns], out[:, 2][Ns], color=cmap(norm(bin_number+0.5)),
+                                       alpha=0.4)
+
 
         cmap_ticks.append(rf"$\rm [{bin_edges[bin_number][0]}, {bin_edges[bin_number][1]}] \; ({count}) $")
         cmap_tickpos.append(bin_number+0.5)
 
-    ax.text(0.8, 0.9, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=ax.transAxes,
+    axes.flatten()[i].text(0.8, 0.9, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i].transAxes,
+                           color='k', ha='left')
+    axes.flatten()[i+2].text(0.8, 0.1, r'$\rm z={0:.0f}$'.format(z), fontsize=8, transform=axes.flatten()[i+2].transAxes,
                            color='k', ha='left')
 
-    ax.set_xlim(5.8, 9.2)
-    ax.set_ylim(-5.6,-2.85)
+    axes.flatten()[i].set_xlim(5.7, 9.3)
+    axes.flatten()[i].set_ylim(-5.6,-2.85)
 
-    cmapper = cm.ScalarMappable(norm=norm, cmap=cmap)
-    cmapper.set_array([])
+    #axes.flatten()[i+2].set_xlim(5.8, 9.2)
+    axes.flatten()[i+2].set_ylim(-4.6,-1.8)
 
-    cax = fig.add_axes([width + left, bottom, 0.05, height])
-    bar = fig.colorbar(cmapper, cax=cax, ticks=cmap_tickpos, orientation='vertical')#, format='%d')
-    bar.ax.set_yticklabels(cmap_ticks)
-    bar.ax.tick_params(labelsize=8)
-    cax.set_ylabel(r'$\rm [log_{10}[1+\delta]] \; (N_{regions})$')
+axes.flatten()[1].tick_params(labelleft=False)
+axes.flatten()[3].tick_params(labelleft=False)
 
-    ax.set_xlabel(r'$\rm log_{10}[M_{BH}\;/\;M_{\odot}]$')
-    ax.set_ylabel(r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\, dex^{-1}]$')
-    fig.savefig(f'figures/regions_per_z_binned/MBH_DF_{z}.pdf', bbox_inches='tight')
-    fig.clf()
+
+axes.flatten()[0].set_ylabel(r'$\rm log_{10}[\phi\;/\;Mpc^{-3}\, dex^{-1}]$')
+axes.flatten()[2].set_ylabel(r'$\rm log_{10}[M_{BH}\;/\;M_{*}]$')
+axes.flatten()[2].set_xlabel(r'$\rm log_{10}[M_{BH}\;/\;M_{\odot}]$')
+axes.flatten()[3].set_xlabel(r'$\rm log_{10}[M_{BH}\;/\;M_{\odot}]$')
+
+
+cmapper = cm.ScalarMappable(norm=norm, cmap=cmap)
+cmapper.set_array([])
+
+cax = fig.add_axes([right, bottom, 0.03, top-bottom])
+bar = fig.colorbar(cmapper, cax=cax, ticks=cmap_tickpos, orientation='vertical')#, format='%d')
+bar.ax.set_yticklabels(cmap_ticks)
+bar.ax.tick_params(labelsize=8)
+cax.set_ylabel(r'$\rm [log_{10}[1+\delta]] \; (N_{regions})$')
+
+fig.savefig(f'figures/regions_per_z_binned/BHMF_MBH_to_Mstar_z5z6.pdf', bbox_inches='tight')
+fig.clf()
