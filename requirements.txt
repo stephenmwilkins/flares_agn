@@ -1,0 +1,8 @@
+h5py
+astropy
+numpy
+scipy
+unyt
+matplotlib
+cmasher
+
