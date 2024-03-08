@@ -1,9 +1,0 @@
-AGN T = 1200000 k  a(ox) = -1.4    a(uv) = -0.5  a(x) = -1
-luminosity 43
-radius 18
-hden 10
-stop column density 22
-iterate to convergence
-save last continuum "output/linear/80.cont" units Angstroms no clobber
-save last lines, array "output/linear/80.lines" units Angstroms no clobber
-save overview "output/linear/80.ovr" last
