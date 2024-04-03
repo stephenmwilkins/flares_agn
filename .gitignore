@@ -2,6 +2,8 @@
 eazy/
 templates
 
+*.in
+*.p
 *.h5
 *.pdf
 *.png
