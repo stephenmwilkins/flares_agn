@@ -1,12 +1,13 @@
 
 import numpy as np
-
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.colors import Normalize
 import cmasher as cmr
 import flares_utility.analyse as analyse
-import flare.plt as fplt
+
+# set style
+plt.style.use('../matplotlibrc.txt')
 
 X_limits = [-0.39, 0.39]
 Y_limits = [0, 69.]
@@ -93,7 +94,9 @@ ax.set_ylabel(r'$\rm N(M_{\bullet}>10^{7}\ M_{\odot})$')
 # cax.tick_params(axis='x', labelsize=6)
 
 
-fig.savefig(f'figs/Mbh_N_environment.pdf')
+filename = f'figs/Mbh_N_environment.pdf'
+print(filename)
+fig.savefig(filename)
 
 
 fig.clf()

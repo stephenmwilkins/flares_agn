@@ -8,30 +8,49 @@ import matplotlib as mpl
 import matplotlib.lines as mlines
 from matplotlib.colors import Normalize
 import scipy.stats as stats
-
-
+from astropy.table import Table
 import cmasher as cmr
-
 import h5py
-
-
 import flare.photom as phot
 from flare.photom import M_to_lum
 import flares_utility.limits
 import flares_utility.plt
 import flares_utility.analyse as analyse
 import flares_utility.stats
-
 from unyt import c, Msun, yr, Lsun
+import utils as u
+
+# set style
+plt.style.use('../matplotlibrc.txt')
+
+
 
 filename = '/Users/sw376/Dropbox/Research/data/simulations/flares/flares_no_particlesed.hdf5'
 
 flares = analyse.analyse(filename, default_tags=False)
 
-flares.list_datasets()
-
 tag = '010_z005p000'
-redshifts = [10, 9, 8, 7, 6, 5]
+
+quantities = []
+
+quantities.append({'path': 'Galaxy', 'dataset': f'Mstar_30',
+                'name': 'Mstar', 'log10': True})
+quantities.append({'path': 'Galaxy', 'dataset': f'BH_Mass',
+                'name': 'BH_Mass', 'log10': True})
+quantities.append({'path': 'Galaxy', 'dataset': f'BH_Mdot',
+                'name': 'BH_Mdot', 'log10': True})
+
+D = flares.get_datasets(tag, quantities)
+s = D['log10Mstar']>9.
+
+stellar_mass =  D['Mstar'][s] * Msun
+blackhole_accretion_rate = D['BH_Mdot'][s] * u.accretion_rate_units
+blackhole_mass = D['BH_Mass'][s] * u.blackhole_mass_units 
+
+eddington_accretion_rate = u.calculate_eddington_accretion_rate(blackhole_mass)
+bolometric_luminosity = u.calcualte_bolometric_luminosity(blackhole_accretion_rate)
+
+eddington_ratio = blackhole_accretion_rate/eddington_accretion_rate
 
 
 
@@ -52,10 +71,6 @@ cax = fig.add_axes([left, bottom+height, width, 0.03])
 ax.fill_between([0,20],[0,0],[7,7], color='k',alpha=0.05)
 
 
-x = 'Mstar'
-y = 'BH_Mass'
-z = 'BH_Mdot'
-
 xlimits = np.array([9.1, 11.9])
 ylimits = np.array([5.1, 9.9])
 
@@ -74,38 +89,27 @@ for ratio, lw in zip([-3., -2., -1.], [1,2,3,4]):
 norm = Normalize(vmin=-10., vmax=0.5)
 cmap = cmr.voltage
 
-# ----------------------------------------------------------------------
-# --- define quantities to read in [not those for the corner plot, that's done later]
-
-quantities = []
-quantities.append({'path': 'Galaxy', 'dataset': f'Mstar_30',
-                  'name': 'Mstar', 'log10': True})
-quantities.append({'path': 'Galaxy', 'dataset': f'BH_Mass',
-                  'name': 'BH_Mass', 'log10': True})
-quantities.append({'path': 'Galaxy', 'dataset': f'BH_Mdot',
-                  'name': 'BH_Mdot', 'log10': True})
+# plot flares
+ax.scatter(np.log10(stellar_mass.to('Msun')), 
+           np.log10(blackhole_mass), 
+           s=1, 
+           c=cmap(norm(np.log10(eddington_ratio))))
 
 
+# Kormendy and Ho (read off Hazboulit)
+x = np.array([9., 12.])
+y = np.array([6.3, 9.8])
+ax.plot(x,y,c='k',lw=1,ls='--',label=r'$\rm Kormendy\ and\ Ho\ (2013)\ [z=0]$')
 
-D = flares.get_datasets(tag, quantities)
-
-print(np.median(D['log10Mstar']))
-
-s = D['log10Mstar']>9.
-
-conversion = 0.1 * Msun * c**2 / yr
-log10conversion = np.log10(conversion.to('erg/s').value)
-
-
-log10Lbol = D['log10BH_Mdot'] + log10conversion
-log10Ledd = np.log10(3.2) + 4 + np.log10((1*Lsun).to('erg/s').value) + D['log10BH_Mass']
-
-log10LbolLedd = log10Lbol - log10Ledd
-
-print(np.min(log10LbolLedd), np.max(log10LbolLedd))
+# Reines and Volunte (2015)
+x = np.array([9., 12.])
+alpha = 7.45 
+beta = 1.05
+y = alpha + beta * (x-11.)
+ax.plot(x,y,c='k',lw=1,ls='-.',label=r'$\rm Reines\ and\ Volonteri\ (2015)\ [z=0]$')
 
 
-ax.scatter(D['log10Mstar'][s], D['log10BH_Mass'][s], s=1, c=cmap(norm(log10LbolLedd[s])))
+
 
 ax.set_ylim(ylimits)
 ax.set_xlim(xlimits)
@@ -122,7 +126,7 @@ cax.xaxis.set_label_position('top')
 cax.set_xlabel(r'$\rm log_{10}(L_{bol}/L_{Edd})$', fontsize=8)
 cax.tick_params(axis='x', labelsize=6)
 
-
+ax.legend(fontsize=7)
 
 filename = f'figs/Mstar_Mbh_Mbhdot_5.pdf'
 fig.savefig(filename)

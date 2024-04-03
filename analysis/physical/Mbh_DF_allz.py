@@ -1,19 +1,11 @@
 
 import numpy as np
-
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-import matplotlib as mpl
-import matplotlib.lines as mlines
-
 import cmasher as cmr
-
-import h5py
-
-import flare.plt as fplt
-import flare.photom as phot
-from flare.photom import M_to_lum
 import flares_utility.analyse as analyse
+
+# set style
+plt.style.use('../matplotlibrc.txt')
 
 
 tags = ['005_z010p000', '006_z009p000', '007_z008p000',

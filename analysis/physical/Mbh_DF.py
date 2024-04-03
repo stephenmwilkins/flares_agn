@@ -1,19 +1,17 @@
-
 import numpy as np
-
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib as mpl
 import matplotlib.lines as mlines
-
 import cmasher as cmr
-
 import h5py
-
 import flare.plt as fplt
 import flare.photom as phot
 from flare.photom import M_to_lum
 import flares_utility.analyse as analyse
+
+# set style
+plt.style.use('../matplotlibrc.txt')
 
 
 tags = ['005_z010p000', '006_z009p000', '007_z008p000',
@@ -94,7 +92,19 @@ for z, c, ax in zip(redshifts, cmr.take_cmap_colors('cmr.gem_r', len(redshifts))
 
         ax.errorbar(x, y, xerr=xerr, yerr=yerr, fmt="o", c=c, markersize=5, label=r'$\rm Matthee+23$')
 
+    # He
+    if z==5:
+        x = np.arange(7.5, 10.7, 0.3)
 
+        y = np.array([12.14, 9.92, 11.30, 13.93, 8.07, 4.46, 0.49, 1.61, 0.19, 0.04, 0.01])
+        yerr = np.array([8.7, 6.24, 4.34, 3.68, 2.87, 1.89, 0.28, 1.08, 0.01, 0.01, 0.01])
+
+        # ax.scatter(x, np.log10(y)-7, marker="s", c=c, s=5, label=r'$\rm He+23\ (z=4)$', alpha=0.5)
+        yerr_u = np.log10(y+yerr)-np.log10(y)
+        yerr_l = np.log10(y)-np.log10(y-yerr)
+        print(yerr_l)
+        yerr = np.array([yerr_l, yerr_u])
+        ax.errorbar(x, np.log10(y)-7., yerr=yerr, fmt="s", c=c, markersize=3, label=r'$\rm He+23\ (z=4)$', alpha=0.5)
 
 
     ax.plot(bin_centres, np.log10(phi), ls = '-', c=c, lw=1)

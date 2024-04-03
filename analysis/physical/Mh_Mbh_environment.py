@@ -9,6 +9,10 @@ import flares_utility.analyse as analyse
 import flare.plt as fplt
 import scipy.stats as stats
 
+# set style
+plt.style.use('../matplotlibrc.txt')
+
+
 X_limits = [11.1, 13.4]
 Y_limits = [5.99, 8.99]
 

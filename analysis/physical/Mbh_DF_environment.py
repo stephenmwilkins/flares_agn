@@ -1,12 +1,12 @@
-
 import numpy as np
-
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.colors import Normalize
 import cmasher as cmr
 import flares_utility.analyse as analyse
-import flare.plt as fplt
+
+# set style
+plt.style.use('../matplotlibrc.txt')
 
 binw = 0.25
 X_limits = [6.51, 9.99]

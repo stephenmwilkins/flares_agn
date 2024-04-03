@@ -23,6 +23,10 @@ import flares_utility.stats
 
 from unyt import c, Msun, yr, Lsun
 
+
+# set style
+plt.style.use('../matplotlibrc.txt')
+
 filename = '/Users/sw376/Dropbox/Research/data/simulations/flares/flares_no_particlesed.hdf5'
 
 flares = analyse.analyse(filename, default_tags=False)

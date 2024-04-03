@@ -8,34 +8,24 @@ import matplotlib as mpl
 import matplotlib.lines as mlines
 from matplotlib.colors import Normalize
 import scipy.stats as stats
-
-
 import cmasher as cmr
-
 import h5py
-
-
 import flare.photom as phot
 from flare.photom import M_to_lum
 import flares_utility.limits
 import flares_utility.plt
 import flares_utility.analyse as analyse
 import flares_utility.stats
+import utils as u
+from unyt import Msun
+
+# set style
+plt.style.use('../matplotlibrc.txt')
 
 x_limits = [5., 10.]
-# x_limits = [28.01, 30.49]
-
-filename = '/Users/sw376/Dropbox/Research/data/simulations/flares/flares_no_particlesed.hdf5'
-
-flares = analyse.analyse(filename, default_tags=False)
-
-flares.list_datasets()
-
-tags = ['005_z010p000', '006_z009p000', '007_z008p000',
-        '008_z007p000', '009_z006p000', '010_z005p000']
-redshifts = [10, 9, 8, 7, 6, 5]
 
 
+# Set up plots
 N = len(redshifts)
 left = 0.1
 top = 0.95
@@ -47,49 +37,47 @@ fig, axes = plt.subplots(2, 3, figsize = (7,5), sharey = True, sharex = True)
 plt.subplots_adjust(left=left, top=top, bottom=bottom, right=right, wspace=0.0, hspace=0.1)
 
 
+filename='/Users/sw376/Dropbox/Research/data/simulations/flares/flares_no_particlesed.hdf5'
+flares = analyse.analyse(filename, default_tags=False)
 
+tags = ['005_z010p000', '006_z009p000', '007_z008p000',
+        '008_z007p000', '009_z006p000', '010_z005p000']
+redshifts = [10, 9, 8, 7, 6, 5]
 
-
-x = 'Mstar'
-y = 'BH_Mass'
-z = 'BH_Mdot'
-
-xlimits = [8., 12.]
-ylimits = [5., 9.]
-
-norm = Normalize(vmin=-10., vmax=0.5)
-cmap = cm.plasma
-
-# ----------------------------------------------------------------------
-# --- define quantities to read in [not those for the corner plot, that's done later]
 
 quantities = []
-quantities.append({'path': 'Galaxy', 'dataset': f'Mstar_30',
-                  'name': 'Mstar', 'log10': True})
-quantities.append({'path': 'Galaxy', 'dataset': f'BH_Mass',
-                  'name': 'BH_Mass', 'log10': True})
-quantities.append({'path': 'Galaxy', 'dataset': f'BH_Mdot',
-                  'name': 'BH_Mdot', 'log10': True})
 
-D = {}
-s = {}
+quantities.append({'path': 'Galaxy', 'dataset': f'Mstar_30',
+                'name': 'Mstar', 'log10': True})
+quantities.append({'path': 'Galaxy', 'dataset': f'BH_Mass',
+                'name': 'BH_Mass', 'log10': True})
+quantities.append({'path': 'Galaxy', 'dataset': f'BH_Mdot',
+                'name': 'BH_Mdot', 'log10': True})
+
+
+
 
 
 
 for tag, redshift, ax in zip(tags, redshifts, axes.flatten()):
 
-    # --- get quantities (and weights and deltas)
     D = flares.get_datasets(tag, quantities)
-
-    print(np.median(D['log10Mstar']))
-
     s = D['log10Mstar']>9.
 
+    stellar_mass =  D['Mstar'][s] * Msun
+    blackhole_accretion_rate = D['BH_Mdot'][s] * u.accretion_rate_units
+    blackhole_mass = D['BH_Mass'][s] * u.blackhole_mass_units 
 
-    print(np.median(D['log10BH_Mass'][s]))
-    print(np.median(D['log10BH_Mdot'][s]))
+    eddington_accretion_rate = u.calculate_eddington_accretion_rate(blackhole_mass)
+    bolometric_luminosity = u.calcualte_bolometric_luminosity(blackhole_accretion_rate)
 
-    ax.scatter(D['log10Mstar'][s], D['log10BH_Mass'][s], s=1, c=cmap(norm(D['log10BH_Mdot'][s])))
+    eddington_ratio = blackhole_accretion_rate/eddington_accretion_rate
+
+
+    ax.scatter(np.log10(stellar_mass), 
+               np.log10(blackhole_mass), 
+               s=1, 
+               c=cmap(norm(np.log10(blackhole_accretion_rate))))
 
     ax.set_ylim(ylimits)
     ax.set_xlim(xlimits)

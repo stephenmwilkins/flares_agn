@@ -15,6 +15,9 @@ import flare.photom as phot
 from flare.photom import M_to_lum
 import flares_utility.analyse as analyse
 
+# set style
+plt.style.use('../matplotlibrc.txt')
+
 
 tags = ['005_z010p000', '006_z009p000', '007_z008p000',
         '008_z007p000', '009_z006p000', '010_z005p000']

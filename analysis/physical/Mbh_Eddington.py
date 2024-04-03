@@ -1,115 +1,92 @@
-
 import numpy as np
 import matplotlib.cm as cm
 import cmasher as cmr
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-import matplotlib as mpl
-import matplotlib.lines as mlines
 from matplotlib.colors import Normalize
+from scipy.stats import binned_statistic
 
-import scipy.stats as stats
-import cmasher as cmr
+from flares_utility.stats import weighted_median, binned_weighted_quantile
+import utils as u
+import matplotlib.pyplot as plt
 
-import h5py
+# set style
+plt.style.use('../matplotlibrc.txt')
 
-import flare.plt as fplt
-import flare.photom as phot
-from flare.photom import M_to_lum
-import flares_utility.limits
-import flares_utility.plt
-import flares_utility.analyse as analyse
-import flares_utility.stats
-
-from unyt import c, Msun, yr, Lsun
-
-filename = '/Users/sw376/Dropbox/Research/data/simulations/flares/flares_no_particlesed.hdf5'
-
-flares = analyse.analyse(filename, default_tags=False)
-
-# flares.list_datasets()
-
-
-tag = '010_z005p000' # z=5
-
-
-quantities = []
-
-quantities.append({'path': 'Galaxy', 'dataset': f'BH_Mass',
-                  'name': 'BH_Mass', 'log10': True})
-quantities.append({'path': 'Galaxy', 'dataset': f'BH_Mdot',
-                  'name': 'BH_Mdot', 'log10': True})
-
-D = {}
-s = {}
-
-# --- get quantities (and weights and deltas)
-D = flares.get_datasets(tag, quantities)
+# get data
+blackhole_mass, blackhole_accretion_rate, bolometric_luminosity, eddington_ratio = u.load_data()
 
 
 xlimits = Mbh_limit = [6.51, 9.49] # Msun
-ylimits = [0.00001, 1.2]
-
-conversion = 0.1 * Msun * c**2 / yr
-log10conversion = np.log10(conversion.to('erg/s').value)
-
-
-
+ylimits = np.array([-6., 0.4])
 
 fig = plt.figure(figsize = (3.5, 3.5))
 
 left  = 0.15
 height = 0.7
 bottom = 0.15
-width = 0.7
+width = 0.6
+hwidth = 0.2
 
 ax = fig.add_axes((left, bottom, width, height))
-ax2 = ax.twinx()
 cax = fig.add_axes([left, bottom+height, width, 0.03])
+hax = fig.add_axes((left+width, bottom, hwidth, height))
 
 
-
-s = D['log10BH_Mass']>6.5
-
-
-#eddington
-log10Lbol_ = np.log10(3.2) + 4 + np.log10((1*Lsun).to('erg/s').value)
-
-log10Lbol = log10Lbol_ + Mbh_limit
-
-print(log10Lbol)
-
-
-log10T = np.log10(2.24E9 * D['BH_Mdot'][s] ** (1 / 4) * D['BH_Mass'][s]**-0.5)
-
-print(np.min(log10T), np.max(log10T))
-
-norm = Normalize(vmin=4.01, vmax=5.99)
-cmap = cmr.ember
-
+norm = Normalize(vmin=-6., vmax=1.)
+cmap = cmr.sunburst
 n = norm
-
 
 ax.fill_between([0,7],[-10,-10],[7,7], color='k',alpha=0.05)
 
+ax.scatter(np.log10(blackhole_mass.value),
+           np.log10(eddington_ratio),
+           s=1,
+           zorder=1,
+           c=cmap(norm(np.log10(blackhole_accretion_rate))))
 
-Lbol = D['log10BH_Mdot'][s] + log10conversion
-Ledd = D['log10BH_Mass'][s] + log10Lbol_
 
-Eddington = Lbol - Ledd
+# plot median relation
+mass_bins = np.arange(6.5, 9.5, 0.25)
+median, bin_edges, N = binned_statistic(
+    np.log10(blackhole_mass), 
+    np.log10(eddington_ratio), 
+    bins=mass_bins, 
+    statistic='median')
 
-print(np.median(Eddington))
+ax.plot(mass_bins[:-1], median, c='k', ls='--')
 
-ax.scatter(D['log10BH_Mass'][s], 10**Eddington, s=1, zorder=1, c=cmap(norm(log10T)))
+# accretion weighted
+median = binned_weighted_quantile(np.log10(blackhole_mass), 
+                                  np.log10(eddington_ratio), 
+                                  blackhole_accretion_rate.value, 
+                                  mass_bins, 
+                                  [0.5])
+
+
+ax.plot(mass_bins[:-1], median, c='k', ls='-')
+
+s2 = np.log10(blackhole_mass.to('Msun').value) > 7
+
+# add histogram of Eddington ratios
+bins = np.arange(-6.1, 0.6, 0.2)
+hax.hist(np.log10(eddington_ratio[s2]), bins=bins, orientation="horizontal", color='0.8', density=True, histtype='stepfilled')
+
+hax.axhline(np.percentile(np.log10(eddington_ratio[s2]), 15.8), color='k', alpha=0.5, ls=':', lw=1)
+hax.axhline(np.percentile(np.log10(eddington_ratio[s2]), 84.2), color='k', alpha=0.5, ls='--', lw=1)
+hax.axhline(np.median(np.log10(eddington_ratio[s2])), color='k', alpha=0.5, lw=1)
+
+
+hax.set_ylim(ylimits)
+hax.set_yticks([])
+hax.set_xticks([])
+
 
 
 ax.set_xlim(Mbh_limit)
 ax.set_ylim(ylimits)
-# ax2.set_ylim(Lbol_limit)
-ax.set_yscale('log')
+# ax.set_yscale('log')
 
 ax.set_xlabel(r'$\rm log_{10}(M_{\bullet}/M_{\odot})$')
-ax.set_ylabel(r'$\rm \lambda$')
+ax.set_ylabel(r'$\rm log_{10}(\lambda_{\rm Edd})$')
 
 
 # add colourbar
@@ -117,7 +94,7 @@ cmapper = cm.ScalarMappable(norm=norm, cmap=cmap)
 fig.colorbar(cmapper, cax=cax, orientation='horizontal')
 cax.xaxis.tick_top()
 cax.xaxis.set_label_position('top')
-cax.set_xlabel(r'$\rm log_{10}(T_{BB}/K)$', fontsize=7)
+cax.set_xlabel(r'$\rm log_{10}(\dot{M}_{accr}/M_{\odot}\ yr^{-1})$', fontsize=7)
 cax.tick_params(axis='x', labelsize=6)
 
 

@@ -1,28 +1,15 @@
 
 import numpy as np
-import matplotlib.cm as cm
 import cmasher as cmr
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-import matplotlib as mpl
-import matplotlib.lines as mlines
-from matplotlib.colors import Normalize
-
-import scipy.stats as stats
 from scipy.stats import binned_statistic
-import cmasher as cmr
-
 import h5py
-
-import flare.plt as fplt
-import flare.photom as phot
-from flare.photom import M_to_lum
 import flares_utility.limits
 import flares_utility.plt
-import flares_utility.analyse as analyse
-import flares_utility.stats
-
 from unyt import c, Msun, yr, Lsun
+
+# set style
+plt.style.use('../matplotlibrc.txt')
 
 flares_dir = '/Users/sw376/Dropbox/Research/data/simulations/flares'
 

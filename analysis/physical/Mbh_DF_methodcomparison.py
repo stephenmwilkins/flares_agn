@@ -15,7 +15,8 @@ import flare.photom as phot
 from flare.photom import M_to_lum
 import flares_utility.analyse as analyse
 
-
+# set style
+plt.style.use('../matplotlibrc.txt')
 
 binw = 0.25
 X_limits = [6.51, 9.49]
